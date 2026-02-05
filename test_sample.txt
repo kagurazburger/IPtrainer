@@ -1,0 +1,25 @@
+人工智能的发展历程
+
+人工智能（Artificial Intelligence，简称AI）是计算机科学的一个分支，它致力于创建能够模拟人类智能的机器。
+
+1. 起源阶段（1940s-1950s）
+   - 1943年：Warren McCulloch和Walter Pitts提出了神经网络的数学模型
+   - 1950年：Alan Turing提出了著名的"图灵测试"
+   - 1956年：John McCarthy在达特茅斯会议上正式提出"人工智能"这个术语
+
+2. 发展阶段（1960s-1980s）
+   - 专家系统兴起，能够解决特定领域的问题
+   - 机器学习算法开始发展
+   - 神经网络研究重新受到重视
+
+3. 现代AI（1990s-至今）
+   - 深度学习革命
+   - 大数据和计算能力的提升
+   - 生成式AI的快速发展
+
+人工智能的核心领域包括：
+- 机器学习（Machine Learning）
+- 自然语言处理（Natural Language Processing）
+- 计算机视觉（Computer Vision）
+- 机器人技术（Robotics）
+- 专家系统（Expert Systems）

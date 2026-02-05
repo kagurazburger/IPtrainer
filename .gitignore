@@ -1,0 +1,47 @@
+node_modules/
+dist/
+output/
+venv*/
+venv311/
+backend/venv*/
+.env
+.env.local
+.venv
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+*.log
+*.tgz
+.pytest_cache/
+decks/archive/# Dependencies
+node_modules/
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+
+# Environment
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+backend/temp/
+
+.vercel

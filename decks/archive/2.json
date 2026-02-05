@@ -1,0 +1,42 @@
+[
+  {
+    "ip": "name",
+    "section": "APPEARANCE",
+    "question": "What is the appearance of Sakata Gintoki's hair?",
+    "hint": "Silver perm",
+    "text": "Sakata Gintoki has silver hair styled in a perm.",
+    "image": ""
+  },
+  {
+    "ip": "name",
+    "section": "PERSONALITY",
+    "question": "What notable addiction does Sakata Gintoki have?",
+    "hint": "Sugar addiction",
+    "text": "Sakata Gintoki has a serious sugar addiction.",
+    "image": ""
+  },
+  {
+    "ip": "name",
+    "section": "PERSONALITY",
+    "question": "What key personality trait defines Sakata Gintoki?",
+    "hint": "Lazy samurai",
+    "text": "Sakata Gintoki is a lazy samurai.",
+    "image": ""
+  },
+  {
+    "ip": "name",
+    "section": "IDENTITY",
+    "question": "What weapon does Sakata Gintoki carry, and what is inscribed on it?",
+    "hint": "Wooden sword",
+    "text": "Sakata Gintoki carries a wooden sword inscribed with 'Lake Toya'.",
+    "image": ""
+  },
+  {
+    "ip": "name",
+    "section": "NARRATIVE",
+    "question": "What role does Sakata Gintoki play in his series?",
+    "hint": "Series heart",
+    "text": "Sakata Gintoki is the heart of the series.",
+    "image": ""
+  }
+]

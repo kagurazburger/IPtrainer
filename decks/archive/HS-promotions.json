@@ -1,0 +1,107 @@
+[
+  {
+    "ip": "PROMO - SHIPPING",
+    "section": "TABOO",
+    "question": "Opener: The biggest barrier remover (Free Shipping).",
+    "hint": "Free Shipping / No Minimum / Global",
+    "text": "First things first—Free Shipping on EVERYTHING. Whether you buy one single box or a giant MEGA, you pay $0 for shipping."
+  },
+  {
+    "ip": "PROMO - TIER 1",
+    "section": "IDENTITY",
+    "question": "Pitching the $0 Tier (The Greeting Card) to new buyers.",
+    "hint": "Any Order / No Minimum / Greeting Card",
+    "text": "Never bought from us before? Today is the day. Order literally ANY blind box, even just one, and you automatically get the Twinkle Twinkle Greeting Card. It’s cute, it’s a star, and it’s free. It’s our way of saying 'Welcome to the family'."
+  },
+  {
+    "ip": "PROMO - TIER 2",
+    "section": "SYMBOLISM",
+    "question": "Pitching the $79 Tier (Phone Holder) as the 'Sweet Spot'.",
+    "hint": "Magnet Holder / Phone Stand / 4-5 Boxes",
+    "text": "Guys, don't stop at one box. If you hit $79 (that’s like...boxes), you unlock the Magnet Card Holder. But wait—it’s also a Phone Stand! It holds your cards AND props up your phone so you can watch TikTok while you eat. Functional and cute."
+  },
+  {
+    "ip": "PROMO - TIER 3",
+    "section": "APPEARANCE",
+    "question": "Pitching the $199 Tier (Neck Pillow) for High Spenders.",
+    "hint": "Neck Pillow / Travel / Soft / Plush",
+    "text": "For my big collectors, aim for $199. You get the Greeting Card, the Phone Stand, AND the Twinkle Twinkle Neck Pillow. It is super soft, plush, and perfect for travel or gaming. You are literally getting a full set for free just by buying the ones you wanted anyway."
+  },
+  {
+    "ip": "PROMO - LOGIC",
+    "section": "TABOO",
+    "question": "Closing: The 'Stacking' Logic (Girl Math).",
+    "hint": "All 3 Gifts / Stackable / Max Value",
+    "text": "Remember, these stack! You don't choose ONE, you get ALL THREE if you hit $199. Shipping is free. Gifts are free. If you are close to $79 or $199, throw in one more box. Do not leave free value on the table!"
+  },
+{
+    "ip": "GIFT - CARD HOLDER",
+    "section": "APPEARANCE",
+    "question": "Detail Sell: Describe the Twinkle Twinkle Card Holder utility.",
+    "hint": "Magnet / Desk Setup / Hands-Free",
+    "text": "Let's look at this $79 freebie. It’s not just a card holder; it’s a vibe for your desk. It has a magnet, so it snaps shut. Prop your phone up, watch your favorite show, and unbox your figures. It’s the ultimate desk companion. You need this."
+  },
+  {
+    "ip": "GIFT - NECK PILLOW",
+    "section": "NARRATIVE",
+    "question": "Scenario: Travel / Gaming / Napping (Neck Pillow).",
+    "hint": "Flights / Road Trips / Gamer Neck",
+    "text": "Planning a trip? Or just sit at a computer all day? The Twinkle Neck Pillow is a lifesaver. It supports your neck while you game or sleep on a plane. Imagine unboxing a Whole Set and then taking a nap on this pillow. That is the luxury life."
+  },
+  {
+    "ip": "GIFT - GREETING CARD",
+    "section": "IDENTITY",
+    "question": "Scenario: Gifting logic (Use the card for the gift).",
+    "hint": "Write a Note / Personal Touch / Birthday",
+    "text": "If you are buying gifts today, this $0 Greeting Card is perfect. You don't need to go to the store to buy a separate card. Write a sweet note on the Twinkle Star card, put it in the box. Boom—instant personalized gift. We got you covered."
+  },
+  {
+    "ip": "PROMO - TWINKLE",
+    "section": "SYMBOLISM",
+    "question": "IP Connection: Why 'Twinkle Twinkle' is a great theme.",
+    "hint": "Star / Wish / Warmth / Universal",
+    "text": "The theme is 'Twinkle Twinkle'. It represents Stars and Wishes. So these freebies aren't just random items; they are 'Lucky Charms'. Carry the card holder or sleep on the pillow to manifest good luck and bright stars for your year."
+  },
+  {
+    "ip": "PROMO - WHOLE SET",
+    "section": "TABOO",
+    "question": "Strategy: How to hit $199 instantly? (Whole Set).",
+    "hint": "One Click / Instant Unlock / Whole Box",
+    "text": "The fastest way to get the Neck Pillow? Buy a Whole Set! A full box is usually around $150-$180. Add one or two extra singles or a Hanging Card, and boom—you hit $199. You get the full unboxing experience plus the entire gift suite."
+  },
+{
+    "ip": "PROMO - URGENCY",
+    "section": "TABOO",
+    "question": "Urgency: Freebies are 'While Stocks Last'.",
+    "hint": "Limited Quantity / First Come / No Restock",
+    "text": "Warning guys: Freebies are 'First Come, First Served'. The Neck Pillows are heavy and bulky, we don't have infinite stock. Once the warehouse runs out, the system will auto-remove it from your cart. Secure it while you see the icon!"
+  },
+  {
+    "ip": "PROMO - CHECKOUT",
+    "section": "TABOO",
+    "question": "Call to Action: Check the cart progress bar.",
+    "hint": "Progress Bar / Add One More / Don't Miss Out",
+    "text": "Go check your cart right now. Look at the progress bar. Are you $5 away from the Phone Stand? Are you $10 away from the Pillow? Do NOT checkout yet. Add a cable, a badge, anything to hit that line. Don't miss a premium gift over $5."
+  },
+  {
+    "ip": "PROMO - VALUE",
+    "section": "IDENTITY",
+    "question": "Comparison: Retail value of the gifts.",
+    "hint": "Pillow Value / Card Holder Value / Free Money",
+    "text": "Think about it. A quality neck pillow is like $30-$40 in stores. A phone stand is $15. You are getting like $50 of value for FREE. If you walk away now, you are literally leaving money on the table. Be smart, stack the cart."
+  },
+  {
+    "ip": "PROMO - SHIPPING",
+    "section": "SYMBOLISM",
+    "question": "Scenario: International buyers (Free Shipping is huge).",
+    "hint": "Global Shipping / Heavy Items / Big Savings",
+    "text": "International friends, listen up. Shipping usually costs a fortune, especially for heavy things like pillows or full boxes. Today it is FREE. This is the biggest discount we can possibly give. Take advantage of it to ship the heavy stuff!"
+  },
+  {
+    "ip": "PROMO - FINAL",
+    "section": "TABOO",
+    "question": "Final Close: The '3-2-1' Countdown.",
+    "hint": "Checkout Now / Refresh / Congratulations",
+    "text": "I see orders flying in. Congrats to User123 for getting the Pillow! Congrats to Sarah for the Card Holder! If you want your name called out, checkout now. 3, 2, 1... let's get those freebies!"
+  }
+]

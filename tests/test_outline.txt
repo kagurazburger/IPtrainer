@@ -1,0 +1,28 @@
+This is a test document for outline generation.
+
+# Introduction
+This document explains how flashcards work in the Live Memory Trainer application.
+
+## What are Flashcards?
+Flashcards are learning tools that help users memorize information through spaced repetition.
+
+## How to Use
+1. Create a deck of flashcards
+2. Study them regularly
+3. Review difficult cards more often
+
+# Features
+The application has several key features:
+
+## Card Generation
+- Upload text documents
+- AI generates flashcards automatically
+- Support for multiple formats
+
+## Study Modes
+- Multiple choice questions
+- Voice evaluation
+- Progress tracking
+
+# Conclusion
+This concludes our overview of the flashcard system.

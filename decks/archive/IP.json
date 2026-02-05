@@ -1,0 +1,826 @@
+[
+  {
+    "ip": "THE MONSTERS",
+    "section": "TABOO",
+    "question": "Are The Monsters evil?",
+    "hint": "Hearts of gold.",
+    "text": "NOTICE: Don't portray them as evil or demonic. They are playful and have hearts of gold.",
+    "image": ""
+  },
+  {
+    "ip": "THE MONSTERS",
+    "section": "ORIGIN",
+    "question": "Who created The Monsters and what inspired him?",
+    "hint": "Kasing Lung / Europe.",
+    "text": "Kasing Lung. Inspired by Nordic mythology, they live in a Nordic forest.",
+    "image": ""
+  },
+  {
+    "ip": "LABUBU (Tribe)",
+    "section": "IDENTITY",
+    "question": "Is Labubu one person?",
+    "hint": "Count > 100.",
+    "text": "No, it is a tribe of over 100 elves. Avoid suggesting hierarchy (except Zimomo).",
+    "image": ""
+  },
+  {
+    "ip": "LABUBU (Tribe)",
+    "section": "APPEARANCE",
+    "question": "What are the 3 iconic features of a Labubu?",
+    "hint": "Teeth, Ears, Height.",
+    "text": "Nine teeth, Upright pointed ears, height of a house cat.",
+    "image": ""
+  },
+  {
+    "ip": "ZIMOMO",
+    "section": "IDENTITY",
+    "question": "How do you identify Zimomo among Labubus?",
+    "hint": "Leader features.",
+    "text": "He is the Leader. He is twice as tall and has a tail.",
+    "image": ""
+  },
+  {
+    "ip": "ZIMOMO",
+    "section": "PERSONALITY",
+    "question": "What is Zimomo's personality?",
+    "hint": "Leadership traits.",
+    "text": "Brave, decisive, and adventurous. But he occasionally gets the group lost.",
+    "image": ""
+  },
+  {
+    "ip": "MOKOKO",
+    "section": "APPEARANCE",
+    "question": "What makes Mokoko look distinct?",
+    "hint": "Pink / Heart.",
+    "text": "Pink fur, white belly, long eyelashes, and a heart-shaped nose.",
+    "image": ""
+  },
+  {
+    "ip": "MOKOKO",
+    "section": "PERSONALITY",
+    "question": "What does Mokoko love?",
+    "hint": "Attention & Fashion.",
+    "text": "She is obsessed with beauty, loves to dress up and show off.",
+    "image": ""
+  },
+  {
+    "ip": "TYCOCO",
+    "section": "APPEARANCE",
+    "question": "What are Tycoco's visual traits?",
+    "hint": "Skeleton.",
+    "text": "Skeleton appearance, sweat on forehead, gloves.",
+    "image": ""
+  },
+  {
+    "ip": "TYCOCO",
+    "section": "NARRATIVE",
+    "question": "Is Tycoco dangerous?",
+    "hint": "Vegetarian.",
+    "text": "No. The skeleton look is just camouflage to scare predators. He is shy, gentle, and vegetarian.",
+    "image": ""
+  },
+  {
+    "ip": "PIPPO",
+    "section": "IDENTITY",
+    "question": "What is Pippo's role in the forest?",
+    "hint": "Brewing.",
+    "text": "He is a master at brewing potent fruit wine.",
+    "image": ""
+  },
+  {
+    "ip": "PIPPO",
+    "section": "APPEARANCE",
+    "question": "What is Pippo's key feature?",
+    "hint": "Listening.",
+    "text": "Unique big ears (almost as big as his spirit).",
+    "image": ""
+  },
+  {
+    "ip": "YAYA",
+    "section": "APPEARANCE",
+    "question": "What is on Yaya's head?",
+    "hint": "Horns.",
+    "text": "Two small pointed horns.",
+    "image": ""
+  },
+  {
+    "ip": "YAYA",
+    "section": "NARRATIVE",
+    "question": "How did Yaya join the group?",
+    "hint": "Bad direction sense.",
+    "text": "He has a poor sense of direction and wandered into Labubu territory by mistake.",
+    "image": ""
+  },
+  {
+    "ip": "SPOOKY",
+    "section": "APPEARANCE",
+    "question": "What is Spooky's special ability?",
+    "hint": "Glow.",
+    "text": "Luminous body (Glowing elves).",
+    "image": ""
+  },
+  {
+    "ip": "SPOOKY",
+    "section": "PERSONALITY",
+    "question": "How does Spooky behave?",
+    "hint": "Observer.",
+    "text": "Curious but quiet. They observe from the shadows without getting involved.",
+    "image": ""
+  },
+  {
+    "ip": "INSTINCTOY",
+    "section": "SYMBOLISM",
+    "question": "What are the two core concepts of Instinctoy?",
+    "hint": "E & S.",
+    "text": "Erosion and Symbiosis.",
+    "image": ""
+  },
+  {
+    "ip": "INSTINCTOY - Fluffy",
+    "section": "NARRATIVE",
+    "question": "How does Fluffy evolve?",
+    "hint": "Horns.",
+    "text": "When it evolves, it grows eight horn-like protrusions and limbs.",
+    "image": ""
+  },
+  {
+    "ip": "MOLLY",
+    "section": "APPEARANCE",
+    "question": "What are the two universal features of ANY Molly?",
+    "hint": "Eyes & Mouth.",
+    "text": "Lake-blue eyes and a Pout (pouting lips).",
+    "image": ""
+  },
+  {
+    "ip": "MOLLY",
+    "section": "ORIGIN",
+    "question": "What is the origin story of Molly?",
+    "hint": "Kenny Wong / Charity.",
+    "text": "Kenny Wong saw a young girl at a charity event who was pouting and focused on painting.",
+    "image": ""
+  },
+  {
+    "ip": "SPACE MOLLY",
+    "section": "SYMBOLISM",
+    "question": "What does Space Molly represent?",
+    "hint": "Exploration.",
+    "text": "Curiosity and bravery. 'Claiming the sky as her own'.",
+    "image": ""
+  },
+  {
+    "ip": "SPACE MOLLY",
+    "section": "APPEARANCE",
+    "question": "Key accessories for Space Molly?",
+    "hint": "Gear.",
+    "text": "Astronaut Helmet and Spacesuit.",
+    "image": ""
+  },
+  {
+    "ip": "BABY MOLLY",
+    "section": "APPEARANCE",
+    "question": "How to identify Baby Molly?",
+    "hint": "Age 3 features.",
+    "text": "Topknot (hair) and Chubby cheeks. She is 3 years old.",
+    "image": ""
+  },
+  {
+    "ip": "ROYAL MOLLY",
+    "section": "SYMBOLISM",
+    "question": "What does the Crown symbolize?",
+    "hint": "Hard work.",
+    "text": "The whirlpool of passion and hard work poured into designing toys.",
+    "image": ""
+  },
+  {
+    "ip": "DIMOO WORLD",
+    "section": "TABOO",
+    "question": "Two rules for Dimoo World?",
+    "hint": "Gender / Stars.",
+    "text": "1. No Gender (Don't use He/She). 2. Do not mention Constellations.",
+    "image": ""
+  },
+  {
+    "ip": "DIMOO",
+    "section": "PERSONALITY",
+    "question": "What is Dimoo's main conflict?",
+    "hint": "Shy vs Explore.",
+    "text": "He wants to explore but is held back by fears (Shy).",
+    "image": ""
+  },
+  {
+    "ip": "BABY CLOUD",
+    "section": "NARRATIVE",
+    "question": "What does Baby Cloud do for Dimoo?",
+    "hint": "Headgear.",
+    "text": "Sticks to his head and changes shapes to cheer him up.",
+    "image": ""
+  },
+  {
+    "ip": "CANDY (Dimoo Friend)",
+    "section": "NARRATIVE",
+    "question": "Why is Candy (Fox) insecure?",
+    "hint": "Missing part.",
+    "text": "She has no tail. Mr. Worm acts as her makeshift tail.",
+    "image": ""
+  },
+  {
+    "ip": "JELLY (Dimoo Friend)",
+    "section": "IDENTITY",
+    "question": "What is Jelly's power?",
+    "hint": "Change.",
+    "text": "Transformation. Jelly plays pranks to cheer Candy up.",
+    "image": ""
+  },
+  {
+    "ip": "TWINKLE TWINKLE",
+    "section": "TABOO",
+    "question": "Gender rule for Twinkle Twinkle?",
+    "hint": "None.",
+    "text": "No gender assumptions should be made.",
+    "image": ""
+  },
+  {
+    "ip": "TWINKLE TWINKLE",
+    "section": "APPEARANCE",
+    "question": "Iconic features of Twinkle?",
+    "hint": "Shape & Face.",
+    "text": "Star-shaped body and Red face (rosy cheeks).",
+    "image": ""
+  },
+  {
+    "ip": "TWINKLE TWINKLE",
+    "section": "PERSONALITY",
+    "question": "How are they described?",
+    "hint": "Dum-dums.",
+    "text": "Cheerful little dum-dums. Silly, carefree, and brave.",
+    "image": ""
+  },
+  {
+    "ip": "TWINKLE TWINKLE",
+    "section": "SYMBOLISM",
+    "question": "What kind of light do they radiate?",
+    "hint": "Not dazzling.",
+    "text": "A warm light, just enough to illuminate their surroundings.",
+    "image": ""
+  },
+  {
+    "ip": "PEACH RIOT",
+    "section": "IDENTITY",
+    "question": "What is Peach Riot?",
+    "hint": "Genre.",
+    "text": "A punk band composed of three spirited high schoolers.",
+    "image": ""
+  },
+  {
+    "ip": "GIGI (Peach Riot)",
+    "section": "APPEARANCE",
+    "question": "Gigi's colors (Hair/Eye/Skin)?",
+    "hint": "Pumpkin...",
+    "text": "Pumpkin Hair, Green Eyes, Ivory Skin.",
+    "image": ""
+  },
+  {
+    "ip": "GIGI (Peach Riot)",
+    "section": "IDENTITY",
+    "question": "Gigi's roles?",
+    "hint": "Boss / Voice.",
+    "text": "Founder, Lead Vocalist, Guitarist.",
+    "image": ""
+  },
+  {
+    "ip": "GIGI (Peach Riot)",
+    "section": "PERSONALITY",
+    "question": "Gigi's traits?",
+    "hint": "E/D/C.",
+    "text": "Energetic, Direct, Confident.",
+    "image": ""
+  },
+  {
+    "ip": "FRANKIE (Peach Riot)",
+    "section": "APPEARANCE",
+    "question": "Frankie's colors?",
+    "hint": "Blue...",
+    "text": "Blue Hair, Black Eyes, Olive Skin.",
+    "image": ""
+  },
+  {
+    "ip": "FRANKIE (Peach Riot)",
+    "section": "IDENTITY",
+    "question": "Frankie's role?",
+    "hint": "Beats.",
+    "text": "Drummer and Band Leader.",
+    "image": ""
+  },
+  {
+    "ip": "FRANKIE (Peach Riot)",
+    "section": "PERSONALITY",
+    "question": "Frankie's social role?",
+    "hint": "Peace.",
+    "text": "Mediator. Fun and easy-going.",
+    "image": ""
+  },
+  {
+    "ip": "POPPY (Peach Riot)",
+    "section": "APPEARANCE",
+    "question": "Poppy's colors?",
+    "hint": "Blonde...",
+    "text": "Blonde Hair, Light Blue Eyes, Tanned Skin.",
+    "image": ""
+  },
+  {
+    "ip": "POPPY (Peach Riot)",
+    "section": "IDENTITY",
+    "question": "Poppy's instrument?",
+    "hint": "Bass/Keys.",
+    "text": "Bassist and Keyboard player.",
+    "image": ""
+  },
+  {
+    "ip": "POPPY (Peach Riot)",
+    "section": "NARRATIVE",
+    "question": "Poppy's secret?",
+    "hint": "Rich vs Punk.",
+    "text": "She is a piano prodigy from a wealthy family but wants to be a Punk Girl.",
+    "image": ""
+  },
+  {
+    "ip": "ZSIGA",
+    "section": "TABOO",
+    "question": "What to avoid discussing?",
+    "hint": "Age.",
+    "text": "Avoid discussing Zsiga's age.",
+    "image": ""
+  },
+  {
+    "ip": "ZSIGA",
+    "section": "APPEARANCE",
+    "question": "Two key features of Zsiga?",
+    "hint": "Thorns / Foot.",
+    "text": "Spiky hair/gloves (Thorns) and a Puppy on her right foot.",
+    "image": ""
+  },
+  {
+    "ip": "ZSIGA",
+    "section": "SYMBOLISM",
+    "question": "Meaning of Thorns?",
+    "hint": "Defense.",
+    "text": "Protection against the hurts of the outside world.",
+    "image": ""
+  },
+  {
+    "ip": "ZSIGA",
+    "section": "SYMBOLISM",
+    "question": "Meaning of the Puppy?",
+    "hint": "Emotion.",
+    "text": "A friend perfectly in tune with Zsiga's emotions.",
+    "image": ""
+  },
+  {
+    "ip": "NYOTA",
+    "section": "APPEARANCE",
+    "question": "Nyota's 3 facial features?",
+    "hint": "Forehead/Bangs/Eyes.",
+    "text": "Big forehead, Short bangs, Big eye.",
+    "image": ""
+  },
+  {
+    "ip": "NYOTA",
+    "section": "PERSONALITY",
+    "question": "Nyota's vibe?",
+    "hint": "Chill.",
+    "text": "Tranquil, Relaxed. Loves to daydream.",
+    "image": ""
+  },
+  {
+    "ip": "HIRONO",
+    "section": "IDENTITY",
+    "question": "What is the core concept of Hirono's world?",
+    "hint": "Safe place.",
+    "text": "A spiritual shelter protecting innocence and imagination that we fumble to maintain.",
+    "image": ""
+  },
+  {
+    "ip": "HIRONO",
+    "section": "APPEARANCE",
+    "question": "What are Hirono's iconic design features?",
+    "hint": "Eyes & Hair.",
+    "text": "Puffy eyes and Messy hair.",
+    "image": ""
+  },
+  {
+    "ip": "HIRONO",
+    "section": "PERSONALITY",
+    "question": "How is Hirono's personality described?",
+    "hint": "Quiet.",
+    "text": "Reserved, not talkative, loves to roam around. He is introverted but occasionally naughty.",
+    "image": ""
+  },
+  {
+    "ip": "HIRONO",
+    "section": "SYMBOLISM",
+    "question": "What does Hirono embody?",
+    "hint": "Feelings.",
+    "text": "He embodies fleeting, hard-to-capture feelings that reflect the ebb and flow of life.",
+    "image": ""
+  },
+  {
+    "ip": "HIRONO",
+    "section": "ORIGIN",
+    "question": "Who is the artist behind Hirono?",
+    "hint": "Lang.",
+    "text": "Lang, an artist and curator known for creating characters based on personal feelings and expressions.",
+    "image": ""
+  },
+  {
+    "ip": "CRYBABY",
+    "section": "TABOO",
+    "question": "What are the TWO critical rules for Crybaby?",
+    "hint": "Gender / Negative.",
+    "text": "1. NO GENDER (Do not use He/She/It). 2. Do not equate crying with negative emotions.",
+    "image": ""
+  },
+  {
+    "ip": "CRYBABY",
+    "section": "APPEARANCE",
+    "question": "What makes Crybaby instantly recognizable?",
+    "hint": "Face feature.",
+    "text": "Big Tear Drops on the face and a baby form with chubby arms.",
+    "image": ""
+  },
+  {
+    "ip": "CRYBABY",
+    "section": "SYMBOLISM",
+    "question": "What is the philosophy behind the tears?",
+    "hint": "Healing.",
+    "text": "Tears have a healing power. Everybody cries sometimes, and not always from sadness.",
+    "image": ""
+  },
+  {
+    "ip": "CRYBABY",
+    "section": "ORIGIN",
+    "question": "What personal loss inspired the artist Molly to create Crybaby?",
+    "hint": "A pet.",
+    "text": "Her beloved golden retriever 'Somchum' passed away. The tears represent her longing.",
+    "image": ""
+  },
+  {
+    "ip": "CRYBABY",
+    "section": "ORIGIN",
+    "question": "Where can you see Somchum in the design?",
+    "hint": "Hidden detail.",
+    "text": "The details of Crybaby's facehold hints are actually Somchum's ears.",
+    "image": ""
+  },
+  {
+    "ip": "KUBO",
+    "section": "IDENTITY",
+    "question": "Who is Kubo?",
+    "hint": "A cool kid.",
+    "text": "A cool kid sporting a buzz cut who pursues passions with unwavering dedication.",
+    "image": ""
+  },
+  {
+    "ip": "KUBO",
+    "section": "APPEARANCE",
+    "question": "What are Kubo's iconic visual traits?",
+    "hint": "Hair / Skin / Eyes.",
+    "text": "Buzz Cut, Olive skin, and a Determined gaze.",
+    "image": ""
+  },
+  {
+    "ip": "KUBO",
+    "section": "PERSONALITY",
+    "question": "Describe Kubo's dual personality.",
+    "hint": "Outside vs Inside.",
+    "text": "Cold on the outside (stoic), but warm and playful on the inside.",
+    "image": ""
+  },
+  {
+    "ip": "KUBO",
+    "section": "SYMBOLISM",
+    "question": "What is Kubo's mantra?",
+    "hint": "Truth.",
+    "text": "'Own Your Truth'. Staying authentic to himself despite harsh realities.",
+    "image": ""
+  },
+  {
+    "ip": "KUBO",
+    "section": "ORIGIN",
+    "question": "What are the artist Bao's interests that reflect in Kubo?",
+    "hint": "Food & Animals.",
+    "text": "Bao has a soft spot for animals and a passion for cooking delicious meals.",
+    "image": ""
+  },
+  {
+    "ip": "POLAR",
+    "section": "IDENTITY",
+    "question": "What species is Polar?",
+    "hint": "Lab made.",
+    "text": "An 'Experimental Species' born in a lab (Monster girl).",
+    "image": ""
+  },
+  {
+    "ip": "POLAR",
+    "section": "APPEARANCE",
+    "question": "What are the 3 weird features of Polar?",
+    "hint": "Eyes / Head / Back.",
+    "text": "Different-sized eyes, Small horns, and a Tail.",
+    "image": ""
+  },
+  {
+    "ip": "POLAR",
+    "section": "PERSONALITY",
+    "question": "What is Polar's attitude towards the world?",
+    "hint": "Curious.",
+    "text": "Curious, Optimistic, Courageous. She always sports a mischievous big grin.",
+    "image": ""
+  },
+  {
+    "ip": "POLAR",
+    "section": "SYMBOLISM",
+    "question": "What does Polar's story represent about the future?",
+    "hint": "Post-world.",
+    "text": "Embracing a transformed 'post-world' where order is rebuilt from destruction.",
+    "image": ""
+  },
+  {
+    "ip": "PINO JELLY",
+    "section": "IDENTITY",
+    "question": "What was Pino Jelly before coming to the human world?",
+    "hint": "Celebrity.",
+    "text": "A stylish pop star from a world of sweets.",
+    "image": ""
+  },
+  {
+    "ip": "PINO JELLY",
+    "section": "APPEARANCE",
+    "question": "What candy features does Pino Jelly have?",
+    "hint": "Bear.",
+    "text": "Gummy Bear Limbs, Freckles, and Blush.",
+    "image": ""
+  },
+  {
+    "ip": "PINO JELLY",
+    "section": "NARRATIVE",
+    "question": "Why did he transform into a candy?",
+    "hint": "To stay close.",
+    "text": "By a twist of fate, he transformed into a candy to be by your side and offer sweet companionship.",
+    "image": ""
+  },
+  {
+    "ip": "PINO JELLY",
+    "section": "ORIGIN",
+    "question": "Who is the artist Yumi and what does she love?",
+    "hint": "School / Food.",
+    "text": "Yumi is an animation graduate who is fascinated with candy, even though her teeth betray her when she eats sweets.",
+    "image": ""
+  },
+  {
+    "ip": "HACIPUPU",
+    "section": "TABOO",
+    "question": "How should Hacipupu NOT be depicted?",
+    "hint": "Too loud.",
+    "text": "Avoid excessively lively, extroverted depictions. He is a quiet boy.",
+    "image": ""
+  },
+  {
+    "ip": "HACIPUPU",
+    "section": "APPEARANCE",
+    "question": "What are Hacipupu's 3 facial features?",
+    "hint": "Eyes / Ears / Nose.",
+    "text": "Double Eyelids, Elf Ears, and a Runny Nose.",
+    "image": ""
+  },
+  {
+    "ip": "HACIPUPU",
+    "section": "PERSONALITY",
+    "question": "How does Hacipupu play?",
+    "hint": "Imagination.",
+    "text": "He is quiet and imaginative. He makes friends with everything around him (toys, dolls).",
+    "image": ""
+  },
+  {
+    "ip": "HACIPUPU",
+    "section": "SYMBOLISM",
+    "question": "What concept does Hacipupu represent for adults?",
+    "hint": "Inner child.",
+    "text": "An 'inner sanctuary' to preserve a slice of childhood innocence and live free from adult pressures.",
+    "image": ""
+  },
+  {
+    "ip": "HACIPUPU",
+    "section": "ORIGIN",
+    "question": "Who are the artists behind Hacipupu?",
+    "hint": "Duo.",
+    "text": "Agee & Yep. They value privacy and communicate their inner world through design.",
+    "image": ""
+  },
+  {
+    "ip": "PUCKY",
+    "section": "IDENTITY",
+    "question": "What are Pucky characters?",
+    "hint": "Space beings.",
+    "text": "Fairies dwelling in the dreamy Pucky Galaxy. They are embodiments of innocence.",
+    "image": ""
+  },
+  {
+    "ip": "PUCKY",
+    "section": "APPEARANCE",
+    "question": "What are the two iconic facial features of Pucky fairies?",
+    "hint": "Eyes & Nose.",
+    "text": "Round eyes and iconic triangular noses.",
+    "image": ""
+  },
+  {
+    "ip": "POKO (Pucky)",
+    "section": "IDENTITY",
+    "question": "Who is Poko?",
+    "hint": "The adventurer.",
+    "text": "A brave and inquisitive fairy from Tall Hat Planet who decided to become an adventurer.",
+    "image": ""
+  },
+  {
+    "ip": "POKO (Pucky)",
+    "section": "APPEARANCE",
+    "question": "What does Poko wear?",
+    "hint": "Hat color.",
+    "text": "A red tall hat and blue clothes.",
+    "image": ""
+  },
+  {
+    "ip": "BEANIE (Pucky)",
+    "section": "ORIGIN",
+    "question": "How are Beanies born?",
+    "hint": "Bodily fluid.",
+    "text": "They are born from the dreamy snot bubbles of a dozing Pucky fairy.",
+    "image": ""
+  },
+  {
+    "ip": "BEANIE (Pucky)",
+    "section": "PERSONALITY",
+    "question": "What is the Beanie lifestyle?",
+    "hint": "Lazy.",
+    "text": "They wish for nothing more than to just chill, take naps, and hide in corners.",
+    "image": ""
+  },
+  {
+    "ip": "SWEET BEAN",
+    "section": "TABOO",
+    "question": "How should you handle gender when describing Sweet Bean?",
+    "hint": "Minimize.",
+    "text": "NOTICE: Minimize gender specificity. Refer to gender as little as possible.",
+    "image": ""
+  },
+  {
+    "ip": "SWEET BEAN",
+    "section": "APPEARANCE",
+    "question": "What are Sweet Bean's iconic features?",
+    "hint": "Button / Diaper.",
+    "text": "Button eyes, button nose, cute messy hair, and a baby diaper.",
+    "image": ""
+  },
+  {
+    "ip": "SWEET BEAN",
+    "section": "PERSONALITY",
+    "question": "What are Sweet Bean's interests?",
+    "hint": "Eating.",
+    "text": "Sweet Bean is a bit of a foodie. Optimistic, innocent, and full of curiosity.",
+    "image": ""
+  },
+  {
+    "ip": "INOSOUL",
+    "section": "TABOO",
+    "question": "What references must be avoided for inosoul?",
+    "hint": "Orientation.",
+    "text": "NOTICE: Avoid LGBTQ references.",
+    "image": ""
+  },
+  {
+    "ip": "INOSOUL",
+    "section": "APPEARANCE",
+    "question": "What animal features does inosoul have?",
+    "hint": "Puppy.",
+    "text": "Dog eyes, dog nose, sensitive red cheeks, and natural curls.",
+    "image": ""
+  },
+  {
+    "ip": "INOSOUL",
+    "section": "NARRATIVE",
+    "question": "Who is inosoul's guardian spirit?",
+    "hint": "Toy.",
+    "text": "A cherished plush puppy that serves as his silent companion.",
+    "image": ""
+  },
+  {
+    "ip": "CHAKA",
+    "section": "TABOO",
+    "question": "Are Chaka figures girls?",
+    "hint": "Gender rule.",
+    "text": "NOTICE: They are a group of candle fairies, NO GENDER, not girls.",
+    "image": ""
+  },
+  {
+    "ip": "CHAKA",
+    "section": "IDENTITY",
+    "question": "What is the life cycle concept of Chaka?",
+    "hint": "Fire.",
+    "text": "Born from the scratch of a match. Their life is brief like a candle's flame, but they burst with intense curiosity.",
+    "image": ""
+  },
+  {
+    "ip": "CHAKA",
+    "section": "SYMBOLISM",
+    "question": "What does Chaka represent?",
+    "hint": "Light.",
+    "text": "Seeking every fleeting moment of brilliance and sharing a passionate glow.",
+    "image": ""
+  },
+  {
+    "ip": "SKULLPANDA",
+    "section": "IDENTITY",
+    "question": "What is Skullpanda's race/form?",
+    "hint": "Not fixed.",
+    "text": "Fluid life form. She travels through different worlds taking on various personas.",
+    "image": ""
+  },
+  {
+    "ip": "SKULLPANDA",
+    "section": "APPEARANCE",
+    "question": "What are the 3 iconic design elements of Skullpanda?",
+    "hint": "Helmet / Ears / Legs.",
+    "text": "Astronaut helmet, Ear orbs, Rounded legs.",
+    "image": ""
+  },
+  {
+    "ip": "SKULLPANDA",
+    "section": "SYMBOLISM",
+    "question": "What is Skullpanda's quest?",
+    "hint": "Self.",
+    "text": "To find its truest self and break new ground while contemplating the shape of infinity.",
+    "image": ""
+  },
+  {
+    "ip": "PATO (Monsters)",
+    "section": "APPEARANCE",
+    "question": "What is Pato's key feature?",
+    "hint": "Ears.",
+    "text": "Drooping ears.",
+    "image": ""
+  },
+  {
+    "ip": "PATO (Monsters)",
+    "section": "NARRATIVE",
+    "question": "What is Pato's tragic romance story?",
+    "hint": "Human.",
+    "text": "He fell in love with a human girl. The ending wasn't what he wanted, but he understood the meaning of love.",
+    "image": ""
+  },
+  {
+    "ip": "MONSTER FLUFFY",
+    "section": "APPEARANCE",
+    "question": "How does Monster Fluffy differ from regular Fluffy?",
+    "hint": "Number 8.",
+    "text": "Eight horns, Eight teeth. It is the evolved version.",
+    "image": ""
+  },
+  {
+    "ip": "MONSTER FLUFFY",
+    "section": "NARRATIVE",
+    "question": "How does Monster Fluffy express emotions?",
+    "hint": "Hands.",
+    "text": "Using hands: covering face (shy), covering mouth (surprised), arms hanging (defeat).",
+    "image": ""
+  },
+  {
+    "ip": "MUCKEY",
+    "section": "IDENTITY",
+    "question": "Who is Muckey?",
+    "hint": "Animal.",
+    "text": "A lovable bear with chubby arms that has bonded with a Fluffy.",
+    "image": ""
+  },
+  {
+    "ip": "SNOOKS & MINI-MON",
+    "section": "NARRATIVE",
+    "question": "What happens when Snooks and Mini-Mon combine?",
+    "hint": "Transformation.",
+    "text": "They transform into a ferocious bear, scaring off bullies and becoming heroes.",
+    "image": ""
+  },
+  {
+    "ip": "NIKO & NONO",
+    "section": "IDENTITY",
+    "question": "What animals are Niko and Nono?",
+    "hint": "Rat & Bat.",
+    "text": "Niko is a land rat (can't fly), Nono is an aquatic bat (gets lost).",
+    "image": ""
+  },
+  {
+    "ip": "NIKO & NONO",
+    "section": "NARRATIVE",
+    "question": "How do Niko and Nono help each other?",
+    "hint": "Pilot & Navigator.",
+    "text": "Nono attaches to Niko's back to become wings; Niko becomes the navigator. Together they conquer sky and sea.",
+    "image": ""
+  }
+]

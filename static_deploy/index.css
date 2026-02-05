@@ -1,0 +1,48 @@
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0a0a0a;
+  color: #f5f5f5;
+  overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+}
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+.card-container {
+  perspective: 1200px;
+}
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+.card-front, .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 1.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.card-back {
+  transform: rotateY(180deg);
+}
+.bg-grid {
+  background-image: radial-gradient(circle, #ffffff10 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+@keyframes pulse-red {
+  0%, 100% { background-color: rgba(239, 68, 68, 0.1); }
+  50% { background-color: rgba(239, 68, 68, 0.3); }
+}
+.taboo-active {
+  animation: pulse-red 2s infinite;
+}

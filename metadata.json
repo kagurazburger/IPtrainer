@@ -1,0 +1,8 @@
+
+{
+  "name": "Live Memory Trainer v6.0",
+  "description": "A specialized retrieval practice tool for TikTok livestream hosts to internalize designer toy facts (IPs), featuring Study and Quiz modes with visual anchors.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

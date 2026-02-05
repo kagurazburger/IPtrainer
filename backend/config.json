@@ -1,0 +1,24 @@
+{
+  "volc_asr_endpoint": "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel",
+  "volc_asr_app_key": "3616773499",
+  "volc_asr_access_token": "wCN1h9lpxNY7ffDa901nWqskfjPMk9Le",
+  "volc_asr_resource_id": "volc.bigasr.sauc.duration",
+  "volc_asr_fast_mode": true,
+  "volc_asr_recv_timeout": 2.0,
+  "volc_llm_api_base": "https://ark.cn-beijing.volces.com/api/v3",
+  "volc_llm_api_key": "1805dc99-496f-4f37-89f1-b7e929ba21b4",
+  "volc_llm_model": "doubao-seed-1-8-251228",
+  "volc_llm_max_tokens": 150,
+  "volc_llm_evaluate_max_tokens": 280,
+  "volc_llm_temperature": 0.0,
+  "default_deck_paths": [
+    "E:\\AppDev\\live-memory-trainer-v8.0\\decks",
+    "E:\\AppDev\\live-memory-trainer-v8.0\\decks\\archive"
+  ],
+  "baidu_ocr_api_key": "C2CTCvZ8Sef9ucaEVLU4c4kq",
+  "baidu_ocr_secret_key": "cWr7sjKmNhrHUhPyHqAFinMXXhf5DIgX",
+  "baidu_ocr_app_id": "121453820",
+  "deepseek_api_key": "sk-cf17e3427d354bdc82e09f7abaeb9b9a",
+  "deepseek_base_url": "https://api.deepseek.com",
+  "deepseek_model": "deepseek-chat"
+}

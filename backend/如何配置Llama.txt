@@ -1,0 +1,39 @@
+============================================================
+  如何配置 Llama（语音评估用的本地模型）
+============================================================
+
+当前检测到：
+  [OK] Whisper: E:\whisper\whisper_run.py
+  [OK] 模型文件: E:\downloads\llama-3.2-1b-instruct-q4_k_m.gguf
+  [X] Llama CLI: 未找到（需要下载）
+
+已把 config.json 里的模型路径改为：
+  llama_gguf_path = E:\downloads\llama-3.2-1b-instruct-q4_k_m.gguf
+
+你还需要下载 llama-cli.exe，二选一即可：
+
+------------------------------------------------------------
+方式一：从 GitHub 下载预编译包（推荐）
+------------------------------------------------------------
+1. 打开：https://github.com/ggml-org/llama.cpp/releases
+2. 下载最新的 Windows x64 压缩包（例如：llama-bXXXX-bin-win-cpu-x64.zip）
+3. 解压到：E:\downloads\llama.cpp\
+4. 确认里面有 llama-cli.exe
+
+config.json 里已预设为：
+  "llama_cli_path": "E:\\downloads\\llama.cpp\\llama-cli.exe"
+
+如果你解压到别的目录，请把 backend\config.json 里的
+llama_cli_path 改成实际路径（注意用双反斜杠 \\）。
+
+------------------------------------------------------------
+方式二：解压到任意目录，再改 config.json
+------------------------------------------------------------
+例如解压到 D:\llama-cpp\，则把 backend\config.json 改成：
+  "llama_cli_path": "D:\\llama-cpp\\llama-cli.exe"
+  "llama_gguf_path": "E:\\downloads\\llama-3.2-1b-instruct-q4_k_m.gguf"
+
+============================================================
+改好后，再运行一次「检查路径.bat」确认两个都是 [OK]
+然后重新运行 start.bat 启动应用。
+============================================================
