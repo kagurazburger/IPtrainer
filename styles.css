@@ -217,6 +217,10 @@ section {
   flex-wrap: wrap;
 }
 
+.auth__actions .btn {
+  flex: 1 1 auto;
+}
+
 .auth__status {
   font-size: 0.9rem;
   color: var(--muted);

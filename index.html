@@ -55,6 +55,36 @@
     </header>
 
     <main>
+      <section class="auth" id="auth">
+        <div class="section-head">
+          <h2>账号与云同步</h2>
+          <p>登录后可在不同设备同步卡牌与训练记录。</p>
+        </div>
+        <div class="auth__grid">
+          <div class="auth__panel">
+            <label for="auth-email">邮箱</label>
+            <input id="auth-email" type="email" placeholder="name@example.com" />
+            <label for="auth-password">密码</label>
+            <input id="auth-password" type="password" placeholder="至少 6 位" />
+            <div class="auth__actions">
+              <button class="btn primary" id="sign-up">注册</button>
+              <button class="btn" id="sign-in">登录</button>
+              <button class="btn" id="sign-in-github">GitHub 登录</button>
+              <button class="btn ghost" id="sign-out">退出</button>
+            </div>
+            <div class="auth__status" id="auth-status">未登录</div>
+          </div>
+          <div class="auth__panel">
+            <h3>云端同步</h3>
+            <p class="auth__hint">点击保存把当前卡牌上传到云端，外出时可直接练习。</p>
+            <div class="auth__actions">
+              <button class="btn primary" id="sync-save">保存到云端</button>
+              <button class="btn ghost" id="sync-load">从云端加载</button>
+            </div>
+            <div class="auth__status" id="sync-status">等待操作</div>
+          </div>
+        </div>
+      </section>
       <section class="uploader" id="uploader">
         <div class="section-head">
           <h2>图片导入与自动识别</h2>

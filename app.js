@@ -67,6 +67,7 @@ const dom = {
   authStatus: document.getElementById("auth-status"),
   signUp: document.getElementById("sign-up"),
   signIn: document.getElementById("sign-in"),
+  signInGithub: document.getElementById("sign-in-github"),
   signOut: document.getElementById("sign-out"),
   syncSave: document.getElementById("sync-save"),
   syncLoad: document.getElementById("sync-load"),
@@ -590,6 +591,21 @@ const attachEvents = () => {
     await supabaseClient.auth.signOut();
     state.user = null;
     setAuthStatus("未登录");
+  });
+
+  dom.signInGithub.addEventListener("click", async () => {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      setAuthStatus("GitHub 登录失败");
+    } else {
+      setAuthStatus("已跳转到 GitHub 登录");
+    }
   });
 
   dom.syncSave.addEventListener("click", () => {
