@@ -31,15 +31,22 @@
       <section class="collection">
         <div class="collection__head">
           <div>
-            <h2>卡牌列表</h2>
-            <p>框选角色后生成卡片，编辑名称与简介并进入训练。</p>
+            <h2>卡牌组</h2>
+            <p>点击卡牌组进入训练，或在当前组内编辑卡片。</p>
           </div>
           <div class="collection__actions">
             <button class="btn primary" id="confirm-all">批量确认</button>
             <button class="btn ghost" id="reset-cards">重置草稿</button>
           </div>
         </div>
-        <div class="card-grid" id="card-grid"></div>
+        <div class="group-grid" id="group-grid"></div>
+        <div class="card-section">
+          <div class="card-section__head">
+            <h3>当前组卡牌</h3>
+            <span class="card-section__meta" id="card-section-meta">未选择组</span>
+          </div>
+          <div class="card-grid" id="card-grid"></div>
+        </div>
       </section>
 
       <section class="training" id="training">

@@ -85,6 +85,8 @@ const dom = {
   panelTriggers: document.querySelectorAll("[data-panel-trigger]"),
   panelCloses: document.querySelectorAll("[data-panel-close]"),
   panels: document.querySelectorAll(".panel"),
+  groupGrid: document.getElementById("group-grid"),
+  cardSectionMeta: document.getElementById("card-section-meta"),
 };
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
@@ -142,6 +144,12 @@ const setSyncStatus = (text) => {
 const setGroupStatus = (text) => {
   if (dom.groupStatus) {
     dom.groupStatus.textContent = text;
+  }
+};
+
+const setCardSectionMeta = (text) => {
+  if (dom.cardSectionMeta) {
+    dom.cardSectionMeta.textContent = text;
   }
 };
 
@@ -373,6 +381,7 @@ const loadCardsFromCloud = async () => {
   renderCropOverlay();
   renderCards();
   updateFlashcard();
+  setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
   setSyncStatus("已加载云端卡牌");
 };
 
@@ -443,6 +452,51 @@ const renderGroups = () => {
   setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
 };
 
+const renderGroupCards = () => {
+  if (!dom.groupGrid) return;
+  dom.groupGrid.innerHTML = "";
+  if (!state.groups.length) {
+    dom.groupGrid.innerHTML = `<div class="card empty">暂无卡牌组，请先创建。</div>`;
+    return;
+  }
+
+  state.groups.forEach((group) => {
+    const card = document.createElement("div");
+    card.className = "group-card";
+    card.dataset.groupId = group.id;
+    card.innerHTML = `
+      <div class="group-card__top">
+        <div class="group-card__icon">📁</div>
+        <div class="group-card__badge">${group.count ?? 0}</div>
+      </div>
+      <div>
+        <div class="group-card__title">${group.name}</div>
+        <div class="group-card__sub">${group.count ?? 0} cards</div>
+      </div>
+      <div class="group-card__actions">
+        <button class="group-card__btn primary">进入训练</button>
+        <button class="group-card__btn">查看</button>
+      </div>
+    `;
+    dom.groupGrid.appendChild(card);
+  });
+};
+
+const loadGroupCounts = async () => {
+  if (!supabaseClient || !state.user || !state.groups.length) return;
+  const updated = [];
+  for (const group of state.groups) {
+    const { count } = await supabaseClient
+      .from("cards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", state.user.id)
+      .eq("group_id", group.id);
+    updated.push({ ...group, count: count || 0 });
+  }
+  state.groups = updated;
+  renderGroupCards();
+};
+
 const loadGroupsFromCloud = async () => {
   if (!supabaseClient || !state.user) return;
   const { data, error } = await supabaseClient
@@ -460,6 +514,7 @@ const loadGroupsFromCloud = async () => {
     state.activeGroupId = state.groups[0].id;
   }
   renderGroups();
+  await loadGroupCounts();
 };
 
 const createGroup = async () => {
@@ -492,6 +547,7 @@ const createGroup = async () => {
     dom.groupName.value = "";
   }
   renderGroups();
+  renderGroupCards();
   setSyncStatus("已创建卡牌组");
   setGroupStatus("已创建卡牌组");
 };
@@ -575,6 +631,7 @@ const deleteGroup = async () => {
   state.activeGroupId = state.groups[0]?.id || null;
   state.cards = [];
   renderGroups();
+  renderGroupCards();
   renderCards();
   updateFlashcard();
   setGroupStatus("已删除卡牌组");
@@ -645,6 +702,9 @@ const buildCardsFromBoxes = () => {
   });
   renderCards();
   updateFlashcard();
+  if (state.activeGroupId) {
+    setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
+  }
 };
 
 const getRelativeBox = (start, end, rect) => {
@@ -858,6 +918,7 @@ const attachEvents = () => {
   dom.groupSelect?.addEventListener("change", () => {
     state.activeGroupId = dom.groupSelect.value || null;
     setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
+    setCardSectionMeta(state.activeGroupId ? "正在加载卡牌..." : "未选择组");
     loadCardsFromCloud();
   });
 
@@ -867,6 +928,22 @@ const attachEvents = () => {
 
   dom.renameGroup?.addEventListener("click", () => {
     renameGroup();
+  });
+
+  dom.groupGrid?.addEventListener("click", (event) => {
+    const target = event.target.closest(".group-card");
+    if (!target) return;
+    const groupId = target.dataset.groupId;
+    if (!groupId) return;
+    state.activeGroupId = groupId;
+    if (dom.groupSelect) {
+      dom.groupSelect.value = groupId;
+    }
+    setGroupStatus("已选择卡牌组");
+    setCardSectionMeta("正在加载卡牌...");
+    loadCardsFromCloud();
+    const training = document.getElementById("training");
+    training?.scrollIntoView({ behavior: "smooth" });
   });
 
   dom.deleteGroup?.addEventListener("click", () => {
