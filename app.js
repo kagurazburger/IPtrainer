@@ -1014,8 +1014,8 @@ const attachEvents = () => {
     }
     setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
     setUploadGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
-    setCardSectionMeta(state.activeGroupId ? "正在加载卡牌..." : "未选择组");
-    loadCardsFromCloud();
+    const activeName = dom.uploadGroupSelect?.selectedOptions?.[0]?.textContent || "";
+    setCardSectionMeta(state.activeGroupId ? `当前组：${activeName}` : "未选择组");
   });
 
   dom.uploadCreateGroup?.addEventListener("click", () => {
