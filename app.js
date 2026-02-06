@@ -12,7 +12,7 @@ const state = {
   user: null,
   groups: [],
   activeGroupId: null,
-  groupCache: {},
+  groupCards: {},
 };
 
 const mockCards = [
@@ -170,10 +170,11 @@ const closePanels = () => {
 };
 
 const reindexCards = () => {
-  state.cards = state.cards.map((card, index) => ({
+  const updated = state.cards.map((card, index) => ({
     ...card,
     id: index + 1,
   }));
+  setActiveCards(updated);
 };
 
 const generateId = () => {
@@ -184,36 +185,30 @@ const generateId = () => {
 };
 
 const ensureCardIds = () => {
-  state.cards = state.cards.map((card) => ({
+  const updated = state.cards.map((card) => ({
     ...card,
     uid: card.uid || generateId(),
   }));
+  setActiveCards(updated);
 };
 
-const cacheActiveGroup = () => {
-  if (!state.activeGroupId) return;
-  state.groupCache[state.activeGroupId] = {
-    cards: state.cards.map((card) => ({ ...card })),
-    trainingIndex: state.trainingIndex,
-    mistakes: Array.from(state.mistakes),
-  };
+const setActiveCards = (cards) => {
+  state.cards = cards;
+  if (state.activeGroupId) {
+    state.groupCards[state.activeGroupId] = cards;
+  }
 };
 
-const restoreGroupFromCache = (groupId) => {
-  const cached = state.groupCache[groupId];
-  if (!cached) return false;
-  state.cards = cached.cards.map((card) => ({ ...card }));
-  state.trainingIndex = cached.trainingIndex || 0;
-  state.mistakes = new Set(cached.mistakes || []);
-  return true;
-};
+const getGroupCards = (groupId) => state.groupCards[groupId] || [];
 
 const getGroupName = (groupId) =>
   state.groups.find((group) => group.id === groupId)?.name || "";
 
 const switchGroup = async (nextGroupId, { loadCloud = false } = {}) => {
   if (nextGroupId === state.activeGroupId) return;
-  cacheActiveGroup();
+  if (state.activeGroupId) {
+    state.groupCards[state.activeGroupId] = state.cards;
+  }
   state.activeGroupId = nextGroupId || null;
 
   if (!state.activeGroupId) {
@@ -227,16 +222,9 @@ const switchGroup = async (nextGroupId, { loadCloud = false } = {}) => {
   }
 
   const activeName = getGroupName(state.activeGroupId);
-  if (restoreGroupFromCache(state.activeGroupId)) {
-    renderCards();
-    updateFlashcard();
-    setCardSectionMeta(`当前组：${activeName}`);
-    return;
-  }
-
-  state.cards = [];
   state.trainingIndex = 0;
   state.mistakes.clear();
+  setActiveCards(getGroupCards(state.activeGroupId));
   renderCards();
   updateFlashcard();
   setCardSectionMeta(activeName ? `当前组：${activeName}` : "未选择组");
@@ -340,7 +328,7 @@ const applyMockData = (src, ocrText) => {
     name: card.name,
     description: card.description,
   }));
-  state.cards = [];
+  setActiveCards([]);
   renderCropOverlay();
   renderCards();
   updateFlashcard();
@@ -354,7 +342,7 @@ const applyCardsFromAI = (src, cards, ocrText) => {
   }));
   state.boxes = [];
   state.tempBox = null;
-  state.cards = [];
+  setActiveCards([]);
   setOcrText(ocrText);
   renderCropOverlay();
   renderCards();
@@ -413,7 +401,7 @@ const handleFile = (file) => {
 
 const rebuildCardsFromBoxes = () => {
   if (!dom.previewImage.src) return;
-  state.cards = [];
+  setActiveCards([]);
   renderCards();
   updateFlashcard();
 };
@@ -447,7 +435,7 @@ const loadCardsFromCloud = async () => {
     return;
   }
 
-  state.cards = (data || []).map((card, index) => ({
+  const loaded = (data || []).map((card, index) => ({
     id: index + 1,
     uid: card.card_uid || generateId(),
     name: card.name || `角色 ${index + 1}`,
@@ -456,6 +444,7 @@ const loadCardsFromCloud = async () => {
     status: card.status || "draft",
     box: card.box || null,
   }));
+  setActiveCards(loaded);
   state.boxes = [];
   state.tempBox = null;
   renderCropOverlay();
@@ -463,7 +452,6 @@ const loadCardsFromCloud = async () => {
   updateFlashcard();
   setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
   setSyncStatus("已加载云端卡牌");
-  cacheActiveGroup();
 };
 
 const saveCardsToCloud = async () => {
@@ -803,12 +791,11 @@ const buildCardsFromBoxes = () => {
       box,
     };
   });
-  state.cards = [...state.cards, ...newCards];
+  setActiveCards([...state.cards, ...newCards]);
   reindexCards();
   renderCards();
   updateFlashcard();
   updateActiveGroupCount(state.cards.length);
-  cacheActiveGroup();
   if (state.activeGroupId) {
     setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
   }
@@ -843,32 +830,32 @@ const clampBox = (box) => {
 };
 
 const updateCardField = (id, field, value) => {
-  state.cards = state.cards.map((card) => {
+  const updated = state.cards.map((card) => {
     if (card.id === id) {
       return { ...card, [field]: value };
     }
     return card;
   });
+  setActiveCards(updated);
   updateFlashcard();
-  cacheActiveGroup();
 };
 
 const toggleCardStatus = (id) => {
-  state.cards = state.cards.map((card) => {
+  const updated = state.cards.map((card) => {
     if (card.id === id) {
       const nextStatus = card.status === "confirmed" ? "draft" : "confirmed";
       return { ...card, status: nextStatus };
     }
     return card;
   });
+  setActiveCards(updated);
   renderCards();
   updateFlashcard();
-  cacheActiveGroup();
 };
 
 const deleteCard = async (id) => {
   const target = state.cards.find((card) => card.id === id);
-  state.cards = state.cards.filter((card) => card.id !== id);
+  setActiveCards(state.cards.filter((card) => card.id !== id));
   state.mistakes.delete(id);
   reindexCards();
   if (state.trainingIndex >= state.cards.length) {
@@ -877,7 +864,6 @@ const deleteCard = async (id) => {
   renderCards();
   updateFlashcard();
   updateActiveGroupCount(state.cards.length);
-  cacheActiveGroup();
 
   if (!target?.uid || !supabaseClient || !state.user || !state.activeGroupId) {
     return;
@@ -1029,7 +1015,7 @@ const attachEvents = () => {
     state.user = null;
     state.groups = [];
     state.activeGroupId = null;
-    state.groupCache = {};
+    state.groupCards = {};
     setAuthStatus("未登录");
     renderGroups();
   });
@@ -1115,7 +1101,7 @@ const attachEvents = () => {
   });
 
   dom.resetCards.addEventListener("click", () => {
-    state.cards = [];
+    setActiveCards([]);
     state.trainingIndex = 0;
     state.mistakes.clear();
     state.boxes = [];
@@ -1129,13 +1115,6 @@ const attachEvents = () => {
     renderCropOverlay();
     renderCards();
     updateFlashcard();
-    if (state.activeGroupId) {
-      state.groupCache[state.activeGroupId] = {
-        cards: [],
-        trainingIndex: 0,
-        mistakes: [],
-      };
-    }
   });
 
   dom.flashcard.addEventListener("click", () => {
