@@ -360,10 +360,7 @@ const applyMockData = (src, ocrText) => {
     name: card.name,
     description: card.description,
   }));
-  setActiveCards([]);
   renderCropOverlay();
-  renderCards();
-  updateFlashcard();
 };
 
 const applyCardsFromAI = (src, cards, ocrText) => {
@@ -374,11 +371,8 @@ const applyCardsFromAI = (src, cards, ocrText) => {
   }));
   state.boxes = [];
   state.tempBox = null;
-  setActiveCards([]);
   setOcrText(ocrText);
   renderCropOverlay();
-  renderCards();
-  updateFlashcard();
 };
 
 const parseImage = async (src) => {
@@ -433,9 +427,6 @@ const handleFile = (file) => {
 
 const rebuildCardsFromBoxes = () => {
   if (!dom.previewImage.src) return;
-  setActiveCards([]);
-  renderCards();
-  updateFlashcard();
 };
 
 const getAuthInput = () => {
@@ -454,12 +445,13 @@ const loadCardsFromCloud = async () => {
     setSyncStatus("请先选择卡牌组");
     return;
   }
+  const requestGroupId = state.activeGroupId;
   setSyncStatus("加载中...");
   const { data, error } = await supabaseClient
     .from("cards")
     .select("id,card_uid,name,description,image_data,box,status")
     .eq("user_id", state.user.id)
-    .eq("group_id", state.activeGroupId)
+    .eq("group_id", requestGroupId)
     .order("updated_at", { ascending: true });
 
   if (error) {
@@ -476,6 +468,12 @@ const loadCardsFromCloud = async () => {
     status: card.status || "draft",
     box: card.box || null,
   }));
+  if (requestGroupId) {
+    state.groupCards[requestGroupId] = loaded;
+  }
+  if (requestGroupId !== state.activeGroupId) {
+    return;
+  }
   setActiveCards(loaded);
   state.boxes = [];
   state.tempBox = null;
