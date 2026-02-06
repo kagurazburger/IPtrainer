@@ -80,6 +80,10 @@ const dom = {
   groupRename: document.getElementById("group-rename"),
   renameGroup: document.getElementById("rename-group"),
   groupStatus: document.getElementById("group-status"),
+  panelOverlay: document.getElementById("panel-overlay"),
+  panelTriggers: document.querySelectorAll("[data-panel-trigger]"),
+  panelCloses: document.querySelectorAll("[data-panel-close]"),
+  panels: document.querySelectorAll(".panel"),
 };
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
@@ -663,6 +667,27 @@ const goToNext = (step) => {
 };
 
 const attachEvents = () => {
+  const closePanels = () => {
+    dom.panels.forEach((panel) => panel.classList.remove("is-active"));
+    dom.panelOverlay?.classList.remove("is-active");
+  };
+
+  dom.panelTriggers.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.panelTrigger;
+      dom.panels.forEach((panel) => {
+        panel.classList.toggle("is-active", panel.dataset.panel === target);
+      });
+      dom.panelOverlay?.classList.add("is-active");
+    });
+  });
+
+  dom.panelCloses.forEach((btn) => {
+    btn.addEventListener("click", closePanels);
+  });
+
+  dom.panelOverlay?.addEventListener("click", closePanels);
+
   dom.modeButtons.forEach((btn) => {
     btn.addEventListener("click", () => setActiveMode(btn.dataset.mode));
   });
