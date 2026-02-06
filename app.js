@@ -211,7 +211,7 @@ const restoreGroupFromCache = (groupId) => {
 const getGroupName = (groupId) =>
   state.groups.find((group) => group.id === groupId)?.name || "";
 
-const switchGroup = async (nextGroupId, { loadCloud = true } = {}) => {
+const switchGroup = async (nextGroupId, { loadCloud = false } = {}) => {
   if (nextGroupId === state.activeGroupId) return;
   cacheActiveGroup();
   state.activeGroupId = nextGroupId || null;
@@ -850,6 +850,7 @@ const updateCardField = (id, field, value) => {
     return card;
   });
   updateFlashcard();
+  cacheActiveGroup();
 };
 
 const toggleCardStatus = (id) => {
@@ -862,6 +863,7 @@ const toggleCardStatus = (id) => {
   });
   renderCards();
   updateFlashcard();
+  cacheActiveGroup();
 };
 
 const deleteCard = async (id) => {
@@ -1057,8 +1059,7 @@ const attachEvents = () => {
     }
     setGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
     setUploadGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
-    const hasCache = nextGroupId ? Boolean(state.groupCache[nextGroupId]) : false;
-    await switchGroup(nextGroupId, { loadCloud: !hasCache });
+    await switchGroup(nextGroupId, { loadCloud: false });
   });
 
   dom.createGroup?.addEventListener("click", () => {
@@ -1096,8 +1097,7 @@ const attachEvents = () => {
     }
     setGroupStatus("已选择卡牌组");
     setUploadGroupStatus("已选择卡牌组");
-    const hasCache = Boolean(state.groupCache[groupId]);
-    await switchGroup(groupId, { loadCloud: !hasCache });
+    await switchGroup(groupId, { loadCloud: false });
     const training = document.getElementById("training");
     training?.scrollIntoView({ behavior: "smooth" });
   });
@@ -1129,6 +1129,13 @@ const attachEvents = () => {
     renderCropOverlay();
     renderCards();
     updateFlashcard();
+    if (state.activeGroupId) {
+      state.groupCache[state.activeGroupId] = {
+        cards: [],
+        trainingIndex: 0,
+        mistakes: [],
+      };
+    }
   });
 
   dom.flashcard.addEventListener("click", () => {
