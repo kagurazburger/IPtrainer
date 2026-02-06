@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>潮玩角色闪卡系统 - MVP 演示</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero__copy">
+        <p class="badge">MVP 演示 · 角色闪卡</p>
+        <h1>潮玩角色闪卡系统</h1>
+        <p class="subtitle">面向 TikTok 潮玩主播与内容运营人员，自动拆分多角色海报，生成可编辑闪卡与记忆训练流程。</p>
+        <div class="hero__actions">
+          <button class="btn primary" data-jump="uploader">开始体验</button>
+          <button class="btn ghost" data-jump="training">查看训练模式</button>
+        </div>
+        <div class="hero__stats">
+          <div>
+            <span class="stat__num">3 步</span>
+            <span class="stat__label">从图片到闪卡</span>
+          </div>
+          <div>
+            <span class="stat__num">1 分钟</span>
+            <span class="stat__label">完成一轮记忆</span>
+          </div>
+          <div>
+            <span class="stat__num">∞</span>
+            <span class="stat__label">角色知识库</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero__panel">
+        <div class="poster-card">
+          <div class="poster-card__header">
+            <span>检测结果</span>
+            <span class="poster-card__tag">Poster</span>
+          </div>
+          <div class="poster-card__image" aria-hidden="true">
+            <div class="poster-card__box" style="--x:12%;--y:18%;--w:36%;--h:40%"></div>
+            <div class="poster-card__box" style="--x:52%;--y:12%;--w:34%;--h:48%"></div>
+            <div class="poster-card__box" style="--x:18%;--y:62%;--w:30%;--h:30%"></div>
+          </div>
+          <div class="poster-card__footer">
+            <span>已识别 3 个角色</span>
+            <button class="btn tiny" id="mock-generate">生成草稿</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="uploader" id="uploader">
+        <div class="section-head">
+          <h2>图片导入与自动识别</h2>
+          <p>支持多角色海报或单角色图片，自动检测类型并生成卡片草稿。</p>
+        </div>
+        <div class="uploader__grid">
+          <div class="uploader__panel">
+            <div class="mode-switch" role="tablist" aria-label="图片模式">
+              <button class="mode-switch__btn is-active" role="tab" data-mode="poster">多角色海报</button>
+              <button class="mode-switch__btn" role="tab" data-mode="single">单角色图片</button>
+            </div>
+            <div class="dropzone" id="dropzone">
+              <input type="file" accept="image/*" id="file-input" />
+              <div class="dropzone__content">
+                <p class="dropzone__title">拖拽图片到此处</p>
+                <p class="dropzone__hint">或点击选择文件 · 支持 JPG / PNG</p>
+              </div>
+            </div>
+            <div class="auto-detect">
+              <span class="auto-detect__label">自动检测结果</span>
+              <span class="pill" id="detect-pill">等待图片</span>
+            </div>
+            <div class="pipeline">
+              <div class="pipeline__step is-active">
+                <span>1</span> 图像解析
+              </div>
+              <div class="pipeline__step">
+                <span>2</span> 角色检测
+              </div>
+              <div class="pipeline__step">
+                <span>3</span> 卡片草稿
+              </div>
+            </div>
+            <div class="ocr-panel">
+              <div class="ocr-panel__head">
+                <span>OCR 识别</span>
+                <span class="pill" id="ai-status">待机</span>
+              </div>
+              <div class="ocr-panel__body" id="ocr-text">等待识别</div>
+            </div>
+          </div>
+          <div class="uploader__preview">
+            <div class="preview-card">
+              <img id="preview-image" alt="预览" />
+              <div class="preview-card__overlay" id="crop-overlay"></div>
+            </div>
+            <div class="preview-note">
+              <p>先拖拽框选角色，再点击“确认框选”生成角色卡片。</p>
+            </div>
+            <div class="preview-actions">
+              <button class="btn primary" id="generate-cards">确认框选</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="editor" id="editor">
+        <div class="section-head">
+          <h2>卡片编辑与确认</h2>
+          <p>逐张确认角色名称与简介，支持批量通过进入记忆训练。</p>
+        </div>
+        <div class="card-grid" id="card-grid">
+        </div>
+        <div class="editor__actions">
+          <button class="btn primary" id="confirm-all">批量确认</button>
+          <button class="btn ghost" id="reset-cards">重置草稿</button>
+        </div>
+      </section>
+
+      <section class="training" id="training">
+        <div class="section-head">
+          <h2>记忆训练模式</h2>
+          <p>正反面闪卡，支持随机、顺序与错题集。</p>
+        </div>
+        <div class="training__layout">
+          <div class="flashcard" id="flashcard">
+            <div class="flashcard__side flashcard__front">
+              <div class="flashcard__image" id="flash-image"></div>
+              <span class="flashcard__tip">点击翻面</span>
+            </div>
+            <div class="flashcard__side flashcard__back">
+              <h3 id="flash-name">角色名称</h3>
+              <p id="flash-desc">角色简介将显示在这里，支持从 OCR 或角色库自动生成。</p>
+              <div class="flashcard__meta" id="flash-tag">卡片未确认</div>
+            </div>
+          </div>
+          <div class="training__controls">
+            <div class="control-group">
+              <label>训练模式</label>
+              <div class="segmented" id="mode-segment">
+                <button class="segmented__btn is-active" data-order="sequence">顺序</button>
+                <button class="segmented__btn" data-order="random">随机</button>
+                <button class="segmented__btn" data-order="mistake">错题集</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <label>操作</label>
+              <div class="control-actions">
+                <button class="btn ghost" id="prev-card">上一张</button>
+                <button class="btn primary" id="next-card">下一张</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <label>复习状态</label>
+              <div class="status-box" id="status-box">
+                已完成 0 / 0
+              </div>
+              <div class="status-actions">
+                <button class="btn tiny" id="mark-known">记住了</button>
+                <button class="btn tiny ghost" id="mark-unknown">不熟悉</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="roadmap" id="roadmap">
+        <div class="section-head">
+          <h2>MVP 里程碑</h2>
+          <p>从基础上传到记忆训练，再到角色库与标签体系。</p>
+        </div>
+        <div class="roadmap__grid">
+          <article>
+            <h3>阶段 1：基础上传与卡片生成</h3>
+            <ul>
+              <li>上传图片（海报/单图）</li>
+              <li>自动裁剪角色</li>
+              <li>手动编辑</li>
+            </ul>
+          </article>
+          <article>
+            <h3>阶段 2：记忆训练</h3>
+            <ul>
+              <li>正反面闪卡</li>
+              <li>随机/顺序练习</li>
+              <li>错题集记录</li>
+            </ul>
+          </article>
+          <article>
+            <h3>阶段 3：角色库与标签</h3>
+            <ul>
+              <li>常用角色库</li>
+              <li>标签分类</li>
+              <li>IP 系列管理</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        <h4>快速体验</h4>
+        <ol>
+          <li>打开 index.html 查看静态演示。</li>
+          <li>选择图片模式并拖拽上传。</li>
+          <li>编辑卡片并进入记忆训练。</li>
+        </ol>
+      </div>
+      <div>
+        <h4>GitHub Pages 部署</h4>
+        <ol>
+          <li>确保仓库包含 index.html、styles.css、app.js。</li>
+          <li>Settings → Pages 选择 main / root。</li>
+          <li>等待生成访问 URL。</li>
+        </ol>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
