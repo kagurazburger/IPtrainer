@@ -385,7 +385,7 @@ const loadCardsFromCloud = async () => {
     .order("updated_at", { ascending: true });
 
   if (error) {
-    setSyncStatus("加载失败");
+    setSyncStatus(`加载失败：${error.message || "请检查配置"}`);
     return;
   }
 
@@ -439,7 +439,7 @@ const saveCardsToCloud = async () => {
     .from("cards")
     .upsert(payload, { onConflict: "user_id,card_uid" });
   if (error) {
-    setSyncStatus("保存失败");
+    setSyncStatus(`保存失败：${error.message || "请检查配置"}`);
     return;
   }
 
@@ -458,6 +458,7 @@ const saveCardsToCloud = async () => {
 
   setSyncStatus("已保存到云端");
   updateActiveGroupCount(state.cards.length);
+  await loadGroupCounts();
 };
 
 const renderGroups = () => {
