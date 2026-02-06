@@ -898,13 +898,11 @@ const attachEvents = () => {
   });
 
   dom.confirmAll.addEventListener("click", () => {
-    state.cards = state.cards.map((card) => ({ ...card, status: "confirmed" }));
-    renderCards();
-    updateFlashcard();
-    autoSaveNow();
     if (!ensureGroupSelected()) {
       dom.groupSelect?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
     }
+    saveCardsToCloud();
   });
 
   dom.generateCards.addEventListener("click", () => {
