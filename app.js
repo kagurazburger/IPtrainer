@@ -552,7 +552,10 @@ const attachEvents = () => {
   });
 
   dom.signUp.addEventListener("click", async () => {
-    if (!supabaseClient) return;
+    if (!supabaseClient) {
+      setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
+      return;
+    }
     const { email, password } = getAuthInput();
     if (!email || !password) {
       setAuthStatus("请填写邮箱和密码");
@@ -560,14 +563,17 @@ const attachEvents = () => {
     }
     const { error } = await supabaseClient.auth.signUp({ email, password });
     if (error) {
-      setAuthStatus("注册失败");
+      setAuthStatus(`注册失败：${error.message || "请检查配置"}`);
       return;
     }
     setAuthStatus("注册成功，请查看邮箱确认");
   });
 
   dom.signIn.addEventListener("click", async () => {
-    if (!supabaseClient) return;
+    if (!supabaseClient) {
+      setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
+      return;
+    }
     const { email, password } = getAuthInput();
     if (!email || !password) {
       setAuthStatus("请填写邮箱和密码");
@@ -578,7 +584,7 @@ const attachEvents = () => {
       password,
     });
     if (error) {
-      setAuthStatus("登录失败");
+      setAuthStatus(`登录失败：${error.message || "请检查配置"}`);
       return;
     }
     state.user = data.user;
@@ -587,14 +593,20 @@ const attachEvents = () => {
   });
 
   dom.signOut.addEventListener("click", async () => {
-    if (!supabaseClient) return;
+    if (!supabaseClient) {
+      setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
+      return;
+    }
     await supabaseClient.auth.signOut();
     state.user = null;
     setAuthStatus("未登录");
   });
 
   dom.signInGithub.addEventListener("click", async () => {
-    if (!supabaseClient) return;
+    if (!supabaseClient) {
+      setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
+      return;
+    }
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: "github",
       options: {
@@ -602,7 +614,7 @@ const attachEvents = () => {
       },
     });
     if (error) {
-      setAuthStatus("GitHub 登录失败");
+      setAuthStatus(`GitHub 登录失败：${error.message || "请检查配置"}`);
     } else {
       setAuthStatus("已跳转到 GitHub 登录");
     }
@@ -762,6 +774,9 @@ const init = () => {
   updateFlashcard();
   attachEvents();
   restoreSession();
+  if (!supabaseClient) {
+    setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
+  }
 };
 
 init();
