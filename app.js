@@ -952,6 +952,10 @@ const attachEvents = () => {
   dom.groupSelect?.addEventListener("change", () => {
     state.activeGroupId = dom.groupSelect.value || null;
     setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
+    if (dom.uploadGroupSelect) {
+      dom.uploadGroupSelect.value = state.activeGroupId || "";
+    }
+    setUploadGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
     setCardSectionMeta(state.activeGroupId ? "正在加载卡牌..." : "未选择组");
     loadCardsFromCloud();
   });
@@ -966,7 +970,13 @@ const attachEvents = () => {
 
   dom.uploadGroupSelect?.addEventListener("change", () => {
     state.activeGroupId = dom.uploadGroupSelect.value || null;
+    if (dom.groupSelect) {
+      dom.groupSelect.value = state.activeGroupId || "";
+    }
+    setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
     setUploadGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
+    setCardSectionMeta(state.activeGroupId ? "正在加载卡牌..." : "未选择组");
+    loadCardsFromCloud();
   });
 
   dom.uploadCreateGroup?.addEventListener("click", () => {
