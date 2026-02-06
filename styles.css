@@ -446,7 +446,7 @@ section {
   padding: 16px;
   box-shadow: var(--shadow);
   display: grid;
-  gap: 14px;
+  gap: 12px;
   border: 1px solid var(--stroke);
 }
 
@@ -459,6 +459,11 @@ section {
 .group-panel__row {
   display: grid;
   gap: 8px;
+}
+
+.group-panel__row label {
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .group-panel__actions {
@@ -475,6 +480,8 @@ section {
   padding: 10px 12px;
   font-family: inherit;
   background: #fff;
+  min-height: 44px;
+  line-height: 1.2;
 }
 
 .group-status {
