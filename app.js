@@ -233,6 +233,7 @@ const renderCards = () => {
       <div class="card__footer">
         <span class="card__status">${card.status === "confirmed" ? "已确认" : "待确认"}</span>
         <button class="btn tiny" data-action="toggle" data-id="${card.id}">${card.status === "confirmed" ? "改回草稿" : "确认卡片"}</button>
+        <button class="btn tiny ghost" data-action="delete" data-id="${card.id}">删除</button>
       </div>
     `;
 
@@ -792,6 +793,29 @@ const toggleCardStatus = (id) => {
   updateFlashcard();
 };
 
+const deleteCard = async (id) => {
+  const target = state.cards.find((card) => card.id === id);
+  state.cards = state.cards.filter((card) => card.id !== id);
+  state.mistakes.delete(id);
+  reindexCards();
+  if (state.trainingIndex >= state.cards.length) {
+    state.trainingIndex = Math.max(0, state.cards.length - 1);
+  }
+  renderCards();
+  updateFlashcard();
+
+  if (!target?.uid || !supabaseClient || !state.user || !state.activeGroupId) {
+    return;
+  }
+
+  await supabaseClient
+    .from("cards")
+    .delete()
+    .eq("user_id", state.user.id)
+    .eq("group_id", state.activeGroupId)
+    .eq("card_uid", target.uid);
+};
+
 const markCard = (known) => {
   const order = getTrainingOrder();
   const card = order[state.trainingIndex % order.length];
@@ -860,6 +884,9 @@ const attachEvents = () => {
     const target = event.target;
     if (target.dataset.action === "toggle") {
       toggleCardStatus(Number(target.dataset.id));
+    }
+    if (target.dataset.action === "delete") {
+      deleteCard(Number(target.dataset.id));
     }
   });
 
