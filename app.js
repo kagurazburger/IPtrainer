@@ -79,6 +79,7 @@ const dom = {
   createGroup: document.getElementById("create-group"),
   groupRename: document.getElementById("group-rename"),
   renameGroup: document.getElementById("rename-group"),
+  deleteGroup: document.getElementById("delete-group"),
   groupStatus: document.getElementById("group-status"),
   panelOverlay: document.getElementById("panel-overlay"),
   panelTriggers: document.querySelectorAll("[data-panel-trigger]"),
@@ -535,6 +536,50 @@ const renameGroup = async () => {
   setGroupStatus("已更新组名称");
 };
 
+const deleteGroup = async () => {
+  if (!supabaseClient || !state.user) {
+    setGroupStatus("请先登录");
+    return;
+  }
+  if (!state.activeGroupId) {
+    setGroupStatus("请先选择卡牌组");
+    return;
+  }
+  const ok = window.confirm("确定删除当前卡牌组及其卡片吗？此操作无法撤销。");
+  if (!ok) return;
+
+  setGroupStatus("删除中...");
+  await supabaseClient
+    .from("cards")
+    .delete()
+    .eq("user_id", state.user.id)
+    .eq("group_id", state.activeGroupId);
+  await supabaseClient
+    .from("study_sessions")
+    .delete()
+    .eq("user_id", state.user.id)
+    .eq("group_id", state.activeGroupId);
+
+  const { error } = await supabaseClient
+    .from("card_groups")
+    .delete()
+    .eq("id", state.activeGroupId)
+    .eq("user_id", state.user.id);
+
+  if (error) {
+    setGroupStatus(`删除失败：${error.message || "请检查配置"}`);
+    return;
+  }
+
+  state.groups = state.groups.filter((group) => group.id !== state.activeGroupId);
+  state.activeGroupId = state.groups[0]?.id || null;
+  state.cards = [];
+  renderGroups();
+  renderCards();
+  updateFlashcard();
+  setGroupStatus("已删除卡牌组");
+};
+
 const restoreSession = async () => {
   if (!supabaseClient) {
     setAuthStatus("Supabase 未加载");
@@ -822,6 +867,10 @@ const attachEvents = () => {
 
   dom.renameGroup?.addEventListener("click", () => {
     renameGroup();
+  });
+
+  dom.deleteGroup?.addEventListener("click", () => {
+    deleteGroup();
   });
 
   dom.syncSave.addEventListener("click", () => {
