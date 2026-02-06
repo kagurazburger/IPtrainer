@@ -660,11 +660,17 @@ const createGroup = async (nameInput, statusSetter) => {
   }
   state.groups.push(data);
   state.activeGroupId = data.id;
+  state.groupCards[data.id] = [];
+  state.cards = [];
+  state.trainingIndex = 0;
+  state.mistakes.clear();
   if (nameInput) {
     nameInput.value = "";
   }
   renderGroups();
   renderGroupCards();
+  renderCards();
+  updateFlashcard();
   setSyncStatus("已创建卡牌组");
   statusSetter("已创建卡牌组");
 };
