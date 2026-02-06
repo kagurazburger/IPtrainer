@@ -1057,7 +1057,8 @@ const attachEvents = () => {
     }
     setGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
     setUploadGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
-    await switchGroup(nextGroupId, { loadCloud: true });
+    const hasCache = nextGroupId ? Boolean(state.groupCache[nextGroupId]) : false;
+    await switchGroup(nextGroupId, { loadCloud: !hasCache });
   });
 
   dom.createGroup?.addEventListener("click", () => {
@@ -1095,7 +1096,8 @@ const attachEvents = () => {
     }
     setGroupStatus("已选择卡牌组");
     setUploadGroupStatus("已选择卡牌组");
-    await switchGroup(groupId, { loadCloud: true });
+    const hasCache = Boolean(state.groupCache[groupId]);
+    await switchGroup(groupId, { loadCloud: !hasCache });
     const training = document.getElementById("training");
     training?.scrollIntoView({ behavior: "smooth" });
   });
