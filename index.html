@@ -104,6 +104,23 @@
       <button class="btn ghost panel__close" data-panel-close>关闭</button>
     </div>
     <div class="panel__body">
+      <div class="group-panel">
+        <div class="group-panel__head">
+          <h3>导入到卡牌组</h3>
+          <span class="group-status" id="upload-group-status">请选择或创建组</span>
+        </div>
+        <div class="group-panel__row">
+          <label for="upload-group-select">选择组</label>
+          <select id="upload-group-select"></select>
+        </div>
+        <div class="group-panel__row">
+          <label for="upload-group-name">新建组</label>
+          <div class="group-panel__actions">
+            <input id="upload-group-name" type="text" placeholder="新建卡牌组名称" />
+            <button class="btn" id="upload-create-group">创建组</button>
+          </div>
+        </div>
+      </div>
       <div class="mode-switch" role="tablist" aria-label="图片模式">
         <button class="mode-switch__btn is-active" role="tab" data-mode="poster">多角色海报</button>
         <button class="mode-switch__btn" role="tab" data-mode="single">单角色图片</button>

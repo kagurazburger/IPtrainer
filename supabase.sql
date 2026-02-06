@@ -38,6 +38,21 @@ alter table cards enable row level security;
 alter table card_groups enable row level security;
 alter table study_sessions enable row level security;
 
+drop policy if exists "cards_select_own" on cards;
+drop policy if exists "cards_insert_own" on cards;
+drop policy if exists "cards_update_own" on cards;
+drop policy if exists "cards_delete_own" on cards;
+
+drop policy if exists "groups_select_own" on card_groups;
+drop policy if exists "groups_insert_own" on card_groups;
+drop policy if exists "groups_update_own" on card_groups;
+drop policy if exists "groups_delete_own" on card_groups;
+
+drop policy if exists "study_select_own" on study_sessions;
+drop policy if exists "study_insert_own" on study_sessions;
+drop policy if exists "study_update_own" on study_sessions;
+drop policy if exists "study_delete_own" on study_sessions;
+
 create policy "cards_select_own" on cards
   for select using (auth.uid() = user_id);
 create policy "cards_insert_own" on cards
