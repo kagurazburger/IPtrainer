@@ -153,6 +153,18 @@ const setCardSectionMeta = (text) => {
   }
 };
 
+const closePanels = () => {
+  dom.panels.forEach((panel) => panel.classList.remove("is-active"));
+  dom.panelOverlay?.classList.remove("is-active");
+};
+
+const reindexCards = () => {
+  state.cards = state.cards.map((card, index) => ({
+    ...card,
+    id: index + 1,
+  }));
+};
+
 const generateId = () => {
   if (window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
@@ -325,7 +337,6 @@ const handleFile = (file) => {
     dom.previewImage.src = src;
     state.boxes = [];
     state.tempBox = null;
-    state.cards = [];
     parseImage(src);
   };
   reader.readAsDataURL(file);
@@ -688,10 +699,15 @@ const buildCardsFromBoxes = () => {
   if (!state.boxes.length) {
     return;
   }
-  state.cards = state.boxes.map((box, index) => {
+  if (!ensureGroupSelected()) {
+    setGroupStatus("请先选择或创建卡牌组");
+    return;
+  }
+  const baseIndex = state.cards.length;
+  const newCards = state.boxes.map((box, index) => {
     const suggestion = state.suggestions[index] || {};
     return {
-      id: index + 1,
+      id: baseIndex + index + 1,
       uid: generateId(),
       name: suggestion.name || `角色 ${index + 1}`,
       description: suggestion.description || "",
@@ -700,11 +716,17 @@ const buildCardsFromBoxes = () => {
       box,
     };
   });
+  state.cards = [...state.cards, ...newCards];
+  reindexCards();
   renderCards();
   updateFlashcard();
   if (state.activeGroupId) {
     setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
   }
+  state.boxes = [];
+  state.tempBox = null;
+  renderCropOverlay();
+  closePanels();
 };
 
 const getRelativeBox = (start, end, rect) => {
@@ -772,11 +794,6 @@ const goToNext = (step) => {
 };
 
 const attachEvents = () => {
-  const closePanels = () => {
-    dom.panels.forEach((panel) => panel.classList.remove("is-active"));
-    dom.panelOverlay?.classList.remove("is-active");
-  };
-
   dom.panelTriggers.forEach((btn) => {
     btn.addEventListener("click", () => {
       const target = btn.dataset.panelTrigger;
