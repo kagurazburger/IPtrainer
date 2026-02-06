@@ -4,11 +4,11 @@ const state = {
   trainingOrder: "sequence",
   trainingIndex: 0,
   mistakes: new Set(),
-  ocrText: "",
   boxes: [],
   suggestions: [],
   tempBox: null,
   dragging: null,
+  selectedBoxIndex: null,
   user: null,
   groups: [],
   activeGroupId: null,
@@ -16,38 +16,11 @@ const state = {
   groupLocked: false,
 };
 
-const mockCards = [
-  {
-    id: 1,
-    name: "星云兔",
-    description: "来自银河的治愈系向导，擅长用光点记录直播现场。",
-    image: "",
-    status: "draft",
-  },
-  {
-    id: 2,
-    name: "棉花拳",
-    description: "擅长软萌外形与硬核攻击的反差角色。",
-    image: "",
-    status: "draft",
-  },
-  {
-    id: 3,
-    name: "机甲萤火",
-    description: "夜间巡航的机甲侦察兵，闪光尾翼是标识。",
-    image: "",
-    status: "draft",
-  },
-];
 
 const dom = {
   modeButtons: document.querySelectorAll(".mode-switch__btn"),
   dropzone: document.getElementById("dropzone"),
   fileInput: document.getElementById("file-input"),
-  detectPill: document.getElementById("detect-pill"),
-  aiStatus: document.getElementById("ai-status"),
-  ocrText: document.getElementById("ocr-text"),
-  pipelineSteps: document.querySelectorAll(".pipeline__step"),
   previewImage: document.getElementById("preview-image"),
   cropOverlay: document.getElementById("crop-overlay"),
   generateCards: document.getElementById("generate-cards"),
@@ -95,12 +68,6 @@ const dom = {
 };
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
-const API_BASE =
-  window.FLASHCARD_API ||
-  (window.location.origin.startsWith("http")
-    ? window.location.origin
-    : "http://localhost:3000");
-
 const SUPABASE_URL = "https://boiznsjwyazawvubggxc.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_lTKSPVkBj94F3rcoGlXaUA_364PHBGf";
 const supabaseClient = window.supabase
@@ -112,26 +79,6 @@ const setActiveMode = (mode) => {
   dom.modeButtons.forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.mode === mode);
   });
-  dom.detectPill.textContent = mode === "poster" ? "等待海报" : "等待单图";
-};
-
-const setPipelineStep = (index) => {
-  dom.pipelineSteps.forEach((step, stepIndex) => {
-    step.classList.toggle("is-active", stepIndex <= index);
-  });
-};
-
-const setAiStatus = (text) => {
-  if (dom.aiStatus) {
-    dom.aiStatus.textContent = text;
-  }
-};
-
-const setOcrText = (text) => {
-  state.ocrText = text || "";
-  if (dom.ocrText) {
-    dom.ocrText.textContent = state.ocrText || "暂无文本";
-  }
 };
 
 const setAuthStatus = (text) => {
@@ -281,6 +228,9 @@ const renderCropOverlay = () => {
     if (state.dragging?.index === index && state.dragging?.type === "move") {
       box.classList.add("is-active");
     }
+    if (state.selectedBoxIndex === index) {
+      box.classList.add("is-selected");
+    }
     box.dataset.index = String(index);
     box.style.cssText = `left:${boxData.x}%;top:${boxData.y}%;width:${boxData.w}%;height:${boxData.h}%`;
     dom.cropOverlay.appendChild(box);
@@ -322,7 +272,7 @@ const renderCards = () => {
 const updateFlashcard = () => {
   if (!state.cards.length) {
     dom.flashName.textContent = "角色名称";
-    dom.flashDesc.textContent = "角色简介将显示在这里，支持从 OCR 或角色库自动生成。";
+    dom.flashDesc.textContent = "角色简介将显示在这里，可手动填写。";
     dom.flashTag.textContent = "卡片未确认";
     dom.flashImage.style.backgroundImage = "linear-gradient(135deg, #fff0e2, #ffd0b4)";
     dom.statusBox.textContent = "已完成 0 / 0";
@@ -349,67 +299,13 @@ const getTrainingOrder = () => {
   return state.cards;
 };
 
-const applyMockData = (src, ocrText) => {
+const setPreviewImage = (src) => {
   dom.previewImage.src = src;
-  dom.detectPill.textContent = state.mode === "poster" ? "检测到多角色" : "检测到单角色";
-  setAiStatus("演示数据");
-  setOcrText(ocrText || "未连接 OCR 服务，已使用演示内容。\n可启动本地后端启用 OCR + LLM。\n");
   state.boxes = [];
   state.tempBox = null;
-  state.suggestions = mockCards.map((card) => ({
-    name: card.name,
-    description: card.description,
-  }));
+  state.selectedBoxIndex = null;
+  state.suggestions = [];
   renderCropOverlay();
-};
-
-const applyCardsFromAI = (src, cards, ocrText) => {
-  dom.previewImage.src = src;
-  state.suggestions = cards.map((card) => ({
-    name: card.name || "",
-    description: card.description || "",
-  }));
-  state.boxes = [];
-  state.tempBox = null;
-  setOcrText(ocrText);
-  renderCropOverlay();
-};
-
-const parseImage = async (src) => {
-  setPipelineStep(0);
-  setAiStatus("识别中");
-  setOcrText("正在识别文本，请稍候...");
-  dom.detectPill.textContent = "解析中";
-
-  try {
-    const response = await fetch(`${API_BASE}/api/parse-image`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: src,
-        mode: state.mode,
-        count: state.mode === "poster" ? 3 : 1,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("AI service error");
-    }
-
-    setPipelineStep(1);
-    const data = await response.json();
-    const cards = Array.isArray(data.cards) ? data.cards : [];
-    if (!cards.length) {
-      throw new Error("Empty cards");
-    }
-    setPipelineStep(2);
-    setAiStatus("已完成");
-    dom.detectPill.textContent = "请手动画框";
-    applyCardsFromAI(src, cards, data.ocrText);
-  } catch (error) {
-    setPipelineStep(0);
-    applyMockData(src, "解析失败，已回退到演示数据。\n请检查后端服务与密钥配置。");
-  }
 };
 
 const handleFile = (file) => {
@@ -417,16 +313,21 @@ const handleFile = (file) => {
   const reader = new FileReader();
   reader.onload = (event) => {
     const src = event.target.result;
-    dom.previewImage.src = src;
-    state.boxes = [];
-    state.tempBox = null;
-    parseImage(src);
+    setPreviewImage(src);
   };
   reader.readAsDataURL(file);
 };
 
 const rebuildCardsFromBoxes = () => {
   if (!dom.previewImage.src) return;
+};
+
+const removeSelectedBox = (index = state.selectedBoxIndex) => {
+  if (index === null || index === undefined) return;
+  if (!state.boxes[index]) return;
+  state.boxes.splice(index, 1);
+  state.selectedBoxIndex = null;
+  renderCropOverlay();
 };
 
 const getAuthInput = () => {
@@ -1200,8 +1101,7 @@ const attachEvents = () => {
       return;
     }
     const sample = "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80";
-    dom.previewImage.src = sample;
-    parseImage(sample);
+    setPreviewImage(sample);
   });
 
   jumpButtons.forEach((btn) => {
@@ -1213,6 +1113,7 @@ const attachEvents = () => {
 
   dom.cropOverlay.addEventListener("pointerdown", (event) => {
     if (!dom.previewImage.src) return;
+    event.preventDefault();
     const rect = dom.cropOverlay.getBoundingClientRect();
     const start = { x: event.clientX, y: event.clientY };
     const target = event.target.closest(".preview-box");
@@ -1220,6 +1121,9 @@ const attachEvents = () => {
     if (target) {
       const index = Number(target.dataset.index);
       const box = state.boxes[index];
+      if (!Number.isNaN(index)) {
+        state.selectedBoxIndex = index;
+      }
       if (!box) return;
       state.dragging = {
         type: "move",
@@ -1232,6 +1136,7 @@ const attachEvents = () => {
       return;
     }
 
+    state.selectedBoxIndex = null;
     state.dragging = { type: "create", start };
     state.tempBox = getRelativeBox(start, start, rect);
     renderCropOverlay();
@@ -1263,6 +1168,7 @@ const attachEvents = () => {
     if (state.dragging.type === "create" && state.tempBox) {
       if (state.tempBox.w >= 2 && state.tempBox.h >= 2) {
         state.boxes.push(state.tempBox);
+        state.selectedBoxIndex = state.boxes.length - 1;
       }
     }
     state.dragging = null;
@@ -1279,17 +1185,28 @@ const attachEvents = () => {
     if (!target) return;
     const index = Number(target.dataset.index);
     if (Number.isNaN(index)) return;
-    state.boxes.splice(index, 1);
-    renderCropOverlay();
+    removeSelectedBox(index);
     rebuildCardsFromBoxes();
+  });
+
+  dom.cropOverlay.addEventListener("contextmenu", (event) => {
+    const target = event.target.closest(".preview-box");
+    if (!target) return;
+    event.preventDefault();
+    const index = Number(target.dataset.index);
+    if (Number.isNaN(index)) return;
+    removeSelectedBox(index);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Delete" && event.key !== "Backspace") return;
+    if (!dom.previewImage.src) return;
+    removeSelectedBox();
   });
 };
 
 const init = () => {
   setActiveMode("poster");
-  setPipelineStep(0);
-  setAiStatus("待机");
-  setOcrText("");
   renderCards();
   updateFlashcard();
   attachEvents();

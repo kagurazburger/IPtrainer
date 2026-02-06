@@ -61,7 +61,7 @@
             </div>
             <div class="flashcard__side flashcard__back">
               <h3 id="flash-name">角色名称</h3>
-              <p id="flash-desc">角色简介将显示在这里，支持从 OCR 或角色库自动生成。</p>
+              <p id="flash-desc">角色简介将显示在这里，可手动填写。</p>
               <div class="flashcard__meta" id="flash-tag">卡片未确认</div>
             </div>
           </div>
@@ -130,22 +130,6 @@
           <p class="dropzone__title">拖拽图片到此处</p>
           <p class="dropzone__hint">或点击选择文件 · 支持 JPG / PNG</p>
         </div>
-      </div>
-      <div class="auto-detect">
-        <span class="auto-detect__label">自动检测结果</span>
-        <span class="pill" id="detect-pill">等待图片</span>
-      </div>
-      <div class="pipeline">
-        <div class="pipeline__step is-active"><span>1</span> 图像解析</div>
-        <div class="pipeline__step"><span>2</span> 角色检测</div>
-        <div class="pipeline__step"><span>3</span> 卡片草稿</div>
-      </div>
-      <div class="ocr-panel">
-        <div class="ocr-panel__head">
-          <span>OCR 识别</span>
-          <span class="pill" id="ai-status">待机</span>
-        </div>
-        <div class="ocr-panel__body" id="ocr-text">等待识别</div>
       </div>
       <div class="preview-card">
         <img id="preview-image" alt="预览" />

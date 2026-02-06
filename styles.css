@@ -654,6 +654,7 @@ img {
   min-height: 240px;
   position: relative;
   border: 1px solid var(--stroke);
+  user-select: none;
 }
 
 .preview-card img {
@@ -667,6 +668,7 @@ img {
   inset: 0;
   pointer-events: auto;
   cursor: crosshair;
+  user-select: none;
 }
 
 .preview-box {
@@ -675,11 +677,17 @@ img {
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+  user-select: none;
 }
 
 .preview-box.is-active {
   border-color: var(--brand);
   background: rgba(45, 212, 191, 0.15);
+}
+
+.preview-box.is-selected {
+  border-color: var(--accent);
+  background: rgba(96, 165, 250, 0.18);
 }
 
 .preview-note {
