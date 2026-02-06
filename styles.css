@@ -515,6 +515,30 @@ section {
   background: #f2f4f7;
 }
 
+.card__image {
+  border-radius: 14px;
+  background: #f1f3f6;
+  padding: 10px;
+}
+
+.card__fields {
+  display: grid;
+  gap: 8px;
+}
+
+.card__label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .card input,
 .card textarea {
   width: 100%;
@@ -532,6 +556,9 @@ section {
 .card__status {
   font-size: 0.85rem;
   color: var(--muted);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2f7;
 }
 
 .editor__actions {

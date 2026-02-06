@@ -186,11 +186,19 @@ const renderCards = () => {
     cardEl.className = "card";
 
     cardEl.innerHTML = `
-      <img src="${card.image}" alt="${card.name}" />
-      <input type="text" value="${card.name}" data-field="name" data-id="${card.id}" />
-      <textarea data-field="description" data-id="${card.id}">${card.description}</textarea>
-      <div class="card__status">状态：${card.status === "confirmed" ? "已确认" : "待确认"}</div>
-      <button class="btn tiny" data-action="toggle" data-id="${card.id}">${card.status === "confirmed" ? "改回草稿" : "确认卡片"}</button>
+      <div class="card__image">
+        <img src="${card.image}" alt="${card.name}" />
+      </div>
+      <div class="card__fields">
+        <label class="card__label">角色名称</label>
+        <input type="text" value="${card.name}" data-field="name" data-id="${card.id}" />
+        <label class="card__label">简介</label>
+        <textarea data-field="description" data-id="${card.id}">${card.description}</textarea>
+      </div>
+      <div class="card__footer">
+        <span class="card__status">${card.status === "confirmed" ? "已确认" : "待确认"}</span>
+        <button class="btn tiny" data-action="toggle" data-id="${card.id}">${card.status === "confirmed" ? "改回草稿" : "确认卡片"}</button>
+      </div>
     `;
 
     dom.cardGrid.appendChild(cardEl);
