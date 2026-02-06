@@ -452,13 +452,16 @@ const loadGroupsFromCloud = async () => {
 const createGroup = async () => {
   if (!supabaseClient || !state.user) {
     setSyncStatus("请先登录");
+    setGroupStatus("请先登录后创建组");
     return;
   }
   const name = dom.groupName?.value?.trim();
   if (!name) {
     setSyncStatus("请输入组名");
+    setGroupStatus("请输入组名");
     return;
   }
+  setGroupStatus("创建中...");
   const { data, error } = await supabaseClient
     .from("card_groups")
     .insert({ user_id: state.user.id, name })
@@ -467,6 +470,7 @@ const createGroup = async () => {
 
   if (error) {
     setSyncStatus("创建组失败");
+    setGroupStatus(`创建失败：${error.message || "请检查配置"}`);
     return;
   }
   state.groups.push(data);
@@ -499,13 +503,14 @@ const renameGroup = async () => {
     setGroupStatus("请输入新名称");
     return;
   }
+  setGroupStatus("保存中...");
   const { error } = await supabaseClient
     .from("card_groups")
     .update({ name })
     .eq("id", state.activeGroupId)
     .eq("user_id", state.user.id);
   if (error) {
-    setGroupStatus("修改失败");
+    setGroupStatus(`修改失败：${error.message || "请检查配置"}`);
     return;
   }
   state.groups = state.groups.map((group) =>
@@ -521,6 +526,7 @@ const renameGroup = async () => {
 const restoreSession = async () => {
   if (!supabaseClient) {
     setAuthStatus("Supabase 未加载");
+    setGroupStatus("请检查网络后重试");
     return;
   }
   const { data } = await supabaseClient.auth.getSession();
@@ -542,6 +548,8 @@ const restoreSession = async () => {
       state.trainingIndex = sessionData.training_index;
     }
     updateFlashcard();
+  } else {
+    setGroupStatus("请先登录后管理卡牌组");
   }
 };
 

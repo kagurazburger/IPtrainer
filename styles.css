@@ -1,15 +1,15 @@
 :root {
-  --bg: #f4efe7;
-  --bg-alt: #f8f3ec;
-  --ink: #1d1c1a;
-  --muted: #6e665c;
-  --brand: #ff7a1a;
-  --brand-dark: #e86200;
-  --accent: #1b7f79;
-  --accent-soft: #d2efe8;
+  --bg: #f6f6f7;
+  --bg-alt: #ffffff;
+  --ink: #111316;
+  --muted: #6c737f;
+  --brand: #0a84ff;
+  --brand-dark: #0066cc;
+  --accent: #30b0c7;
+  --accent-soft: rgba(48, 176, 199, 0.12);
   --card: #ffffff;
-  --shadow: 0 20px 50px rgba(25, 20, 15, 0.12);
-  --stroke: rgba(29, 28, 26, 0.12);
+  --shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  --stroke: rgba(17, 19, 22, 0.08);
 }
 
 * {
@@ -19,9 +19,9 @@
 }
 
 body {
-  font-family: "Space Grotesk", "ZCOOL XiaoWei", sans-serif;
+  font-family: "Plus Jakarta Sans", "Noto Sans SC", sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at top, #fff6ec 0%, #f4efe7 48%, #efe8de 100%);
+  background: radial-gradient(circle at top, #ffffff 0%, #f4f6f8 55%, #eef1f5 100%);
   min-height: 100vh;
 }
 
@@ -45,12 +45,12 @@ img {
 
 .badge {
   display: inline-block;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: rgba(10, 132, 255, 0.12);
+  color: var(--brand);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 h1 {
@@ -73,18 +73,18 @@ h1 {
 
 .btn {
   border: none;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: 12px;
   background: var(--ink);
   color: white;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  box-shadow: 0 12px 24px rgba(29, 28, 26, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
 }
 
 .btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .btn.primary {
@@ -138,6 +138,7 @@ h1 {
   box-shadow: var(--shadow);
   padding: 18px;
   width: min(360px, 90%);
+  border: 1px solid var(--stroke);
 }
 
 .poster-card__header,
@@ -161,20 +162,20 @@ h1 {
   margin: 14px 0;
   height: 220px;
   border-radius: 16px;
-  background: linear-gradient(140deg, #fff1e3, #ffd0a8 40%, #ffc9a1 55%, #fff1e3 100%);
+  background: linear-gradient(140deg, #f8fafc, #e8edf4 50%, #f8fafc 100%);
   position: relative;
   overflow: hidden;
 }
 
 .poster-card__box {
   position: absolute;
-  border: 2px dashed rgba(29, 28, 26, 0.45);
+  border: 1.5px dashed rgba(15, 23, 42, 0.45);
   border-radius: 10px;
   left: var(--x);
   top: var(--y);
   width: var(--w);
   height: var(--h);
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.55);
   animation: pulse 2.6s ease-in-out infinite;
 }
 
@@ -185,6 +186,15 @@ h1 {
 
 section {
   margin-top: 80px;
+}
+
+.section-head h2 {
+  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+}
+
+.section-head p {
+  margin-top: 10px;
+  color: var(--muted);
 }
 
 .auth__grid {
@@ -201,16 +211,10 @@ section {
   box-shadow: var(--shadow);
   display: grid;
   gap: 12px;
-}
-
-.auth__panel input {
-  width: 100%;
-  border-radius: 10px;
   border: 1px solid var(--stroke);
-  padding: 10px 12px;
-  font-family: inherit;
 }
 
+.auth__panel input,
 .auth__panel select {
   width: 100%;
   border-radius: 10px;
@@ -218,54 +222,6 @@ section {
   padding: 10px 12px;
   font-family: inherit;
   background: #fff;
-}
-
-.auth__group {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-}
-
-.group-panel {
-  margin-top: 22px;
-  background: var(--card);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 14px;
-}
-
-.group-panel__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.group-panel__row {
-  display: grid;
-  gap: 8px;
-}
-
-.group-panel__actions {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-}
-
-.group-panel input,
-.group-panel select {
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid var(--stroke);
-  padding: 10px 12px;
-  font-family: inherit;
-  background: #fff;
-}
-
-.group-status {
-  font-size: 0.9rem;
-  color: var(--muted);
 }
 
 .auth__actions {
@@ -286,15 +242,6 @@ section {
 .auth__hint {
   color: var(--muted);
   line-height: 1.5;
-}
-
-.section-head h2 {
-  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
-}
-
-.section-head p {
-  margin-top: 10px;
-  color: var(--muted);
 }
 
 .uploader__grid {
@@ -347,11 +294,12 @@ section {
   background: var(--card);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow);
 }
 
 .dropzone.dragover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--brand);
+  background: rgba(10, 132, 255, 0.06);
 }
 
 .dropzone input {
@@ -410,9 +358,9 @@ section {
 }
 
 .pipeline__step.is-active {
-  border-color: var(--accent);
+  border-color: var(--brand);
   color: var(--ink);
-  background: var(--accent-soft);
+  background: rgba(10, 132, 255, 0.08);
 }
 
 .ocr-panel {
@@ -448,6 +396,7 @@ section {
   overflow: hidden;
   min-height: 280px;
   position: relative;
+  border: 1px solid var(--stroke);
 }
 
 .preview-card img {
@@ -465,22 +414,22 @@ section {
 
 .preview-box {
   position: absolute;
-  border: 2px solid rgba(29, 28, 26, 0.55);
+  border: 2px solid rgba(17, 19, 22, 0.6);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.35);
   box-shadow: 0 8px 16px rgba(29, 28, 26, 0.18);
 }
 
 .preview-box.is-active {
-  border-color: var(--accent);
-  background: rgba(210, 239, 232, 0.4);
+  border-color: var(--brand);
+  background: rgba(10, 132, 255, 0.16);
 }
 
 .preview-note {
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: 14px;
-  background: var(--bg-alt);
+  background: #f2f4f7;
   color: var(--muted);
 }
 
@@ -488,6 +437,49 @@ section {
   margin-top: 12px;
   display: flex;
   justify-content: flex-end;
+}
+
+.group-panel {
+  margin-top: 22px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--stroke);
+}
+
+.group-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-panel__row {
+  display: grid;
+  gap: 8px;
+}
+
+.group-panel__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.group-panel input,
+.group-panel select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  padding: 10px 12px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.group-status {
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 .card-grid {
@@ -504,6 +496,7 @@ section {
   box-shadow: var(--shadow);
   display: grid;
   gap: 12px;
+  border: 1px solid var(--stroke);
 }
 
 .card.empty {
@@ -519,7 +512,7 @@ section {
   width: 100%;
   height: 160px;
   object-fit: contain;
-  background: #f6f1ea;
+  background: #f2f4f7;
 }
 
 .card input,
@@ -575,6 +568,7 @@ section {
   justify-content: center;
   padding: 20px;
   text-align: center;
+  border: 1px solid var(--stroke);
 }
 
 .flashcard__front {
@@ -597,7 +591,7 @@ section {
   width: 100%;
   height: 200px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #fff0e2, #ffd0b4);
+  background: linear-gradient(135deg, #f3f5f8, #e6ebf2);
   margin-bottom: 14px;
   background-size: contain;
   background-position: center;
@@ -611,8 +605,8 @@ section {
 
 .flashcard__meta {
   margin-top: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: rgba(10, 132, 255, 0.12);
+  color: var(--brand);
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 0.85rem;
@@ -625,6 +619,7 @@ section {
   box-shadow: var(--shadow);
   display: grid;
   gap: 12px;
+  border: 1px solid var(--stroke);
 }
 
 .control-group label {
@@ -634,7 +629,7 @@ section {
 .segmented {
   display: flex;
   gap: 6px;
-  background: var(--bg-alt);
+  background: #f2f4f7;
   padding: 6px;
   border-radius: 999px;
 }
@@ -661,7 +656,7 @@ section {
 }
 
 .status-box {
-  background: var(--bg-alt);
+  background: #f2f4f7;
   border-radius: 12px;
   padding: 12px;
   font-weight: 600;
@@ -684,6 +679,7 @@ section {
   padding: 18px;
   border-radius: 16px;
   box-shadow: var(--shadow);
+  border: 1px solid var(--stroke);
 }
 
 .roadmap__grid ul {
@@ -724,7 +720,12 @@ section {
   }
 
   .control-actions,
-  .status-actions {
+  .status-actions,
+  .group-panel__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .auth__actions {
     flex-direction: column;
   }
 }
