@@ -13,6 +13,7 @@ const state = {
   groups: [],
   activeGroupId: null,
   groupCards: {},
+  groupLocked: false,
 };
 
 const mockCards = [
@@ -52,7 +53,6 @@ const dom = {
   generateCards: document.getElementById("generate-cards"),
   cardGrid: document.getElementById("card-grid"),
   confirmAll: document.getElementById("confirm-all"),
-  resetCards: document.getElementById("reset-cards"),
   flashcard: document.getElementById("flashcard"),
   flashImage: document.getElementById("flash-image"),
   flashName: document.getElementById("flash-name"),
@@ -158,6 +158,32 @@ const setUploadGroupStatus = (text) => {
   }
 };
 
+const autoSaveNow = async () => {
+  if (!supabaseClient || !state.user || !state.activeGroupId) return;
+  if (!state.cards.length) return;
+  await saveCardsToCloud();
+};
+
+const lockGroupSelection = (message) => {
+  state.groupLocked = true;
+  if (dom.groupSelect) dom.groupSelect.disabled = true;
+  if (dom.uploadGroupSelect) dom.uploadGroupSelect.disabled = true;
+  if (message) {
+    setGroupStatus(message);
+    setUploadGroupStatus(message);
+  }
+};
+
+const unlockGroupSelection = (message) => {
+  state.groupLocked = false;
+  if (dom.groupSelect) dom.groupSelect.disabled = false;
+  if (dom.uploadGroupSelect) dom.uploadGroupSelect.disabled = false;
+  if (message) {
+    setGroupStatus(message);
+    setUploadGroupStatus(message);
+  }
+};
+
 const setCardSectionMeta = (text) => {
   if (dom.cardSectionMeta) {
     dom.cardSectionMeta.textContent = text;
@@ -205,6 +231,12 @@ const getGroupName = (groupId) =>
   state.groups.find((group) => group.id === groupId)?.name || "";
 
 const switchGroup = async (nextGroupId, { loadCloud = false } = {}) => {
+  if (state.groupLocked && nextGroupId !== state.activeGroupId) {
+    const notice = "当前组已锁定，请先保存到云端再切换";
+    setGroupStatus(notice);
+    setUploadGroupStatus(notice);
+    return;
+  }
   if (nextGroupId === state.activeGroupId) return;
   if (state.activeGroupId) {
     state.groupCards[state.activeGroupId] = state.cards;
@@ -504,6 +536,7 @@ const saveCardsToCloud = async () => {
   });
 
   setSyncStatus("已保存到云端");
+  unlockGroupSelection("已保存到云端，当前组已解锁");
   updateActiveGroupCount(state.cards.length);
   await loadGroupCounts();
 };
@@ -716,6 +749,7 @@ const deleteGroup = async () => {
   state.groups = state.groups.filter((group) => group.id !== state.activeGroupId);
   state.activeGroupId = state.groups[0]?.id || null;
   state.cards = [];
+  unlockGroupSelection();
   renderGroups();
   renderGroupCards();
   renderCards();
@@ -796,6 +830,8 @@ const buildCardsFromBoxes = () => {
   renderCards();
   updateFlashcard();
   updateActiveGroupCount(state.cards.length);
+  lockGroupSelection("当前组已锁定，保存到云端后可切换");
+  autoSaveNow();
   if (state.activeGroupId) {
     setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
   }
@@ -851,6 +887,7 @@ const toggleCardStatus = (id) => {
   setActiveCards(updated);
   renderCards();
   updateFlashcard();
+  autoSaveNow();
 };
 
 const deleteCard = async (id) => {
@@ -864,6 +901,10 @@ const deleteCard = async (id) => {
   renderCards();
   updateFlashcard();
   updateActiveGroupCount(state.cards.length);
+  if (!state.cards.length) {
+    unlockGroupSelection("当前组已解锁");
+  }
+  autoSaveNow();
 
   if (!target?.uid || !supabaseClient || !state.user || !state.activeGroupId) {
     return;
@@ -955,6 +996,7 @@ const attachEvents = () => {
     state.cards = state.cards.map((card) => ({ ...card, status: "confirmed" }));
     renderCards();
     updateFlashcard();
+    autoSaveNow();
     if (!ensureGroupSelected()) {
       dom.groupSelect?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -1016,6 +1058,7 @@ const attachEvents = () => {
     state.groups = [];
     state.activeGroupId = null;
     state.groupCards = {};
+    unlockGroupSelection();
     setAuthStatus("未登录");
     renderGroups();
   });
@@ -1039,6 +1082,12 @@ const attachEvents = () => {
   });
 
   dom.groupSelect?.addEventListener("change", async () => {
+    if (state.groupLocked) {
+      if (dom.groupSelect) dom.groupSelect.value = state.activeGroupId || "";
+      if (dom.uploadGroupSelect) dom.uploadGroupSelect.value = state.activeGroupId || "";
+      setGroupStatus("当前组已锁定，请先保存到云端再切换");
+      return;
+    }
     const nextGroupId = dom.groupSelect.value || null;
     if (dom.uploadGroupSelect) {
       dom.uploadGroupSelect.value = nextGroupId || "";
@@ -1057,6 +1106,12 @@ const attachEvents = () => {
   });
 
   dom.uploadGroupSelect?.addEventListener("change", async () => {
+    if (state.groupLocked) {
+      if (dom.uploadGroupSelect) dom.uploadGroupSelect.value = state.activeGroupId || "";
+      if (dom.groupSelect) dom.groupSelect.value = state.activeGroupId || "";
+      setUploadGroupStatus("当前组已锁定，请先保存到云端再切换");
+      return;
+    }
     const nextGroupId = dom.uploadGroupSelect.value || null;
     if (dom.groupSelect) {
       dom.groupSelect.value = nextGroupId || "";
@@ -1075,6 +1130,11 @@ const attachEvents = () => {
     if (!target) return;
     const groupId = target.dataset.groupId;
     if (!groupId) return;
+    if (state.groupLocked && groupId !== state.activeGroupId) {
+      setGroupStatus("当前组已锁定，请先保存到云端再切换");
+      setUploadGroupStatus("当前组已锁定，请先保存到云端再切换");
+      return;
+    }
     if (dom.groupSelect) {
       dom.groupSelect.value = groupId;
     }
@@ -1100,22 +1160,6 @@ const attachEvents = () => {
     loadCardsFromCloud();
   });
 
-  dom.resetCards.addEventListener("click", () => {
-    setActiveCards([]);
-    state.trainingIndex = 0;
-    state.mistakes.clear();
-    state.boxes = [];
-    state.tempBox = null;
-    state.suggestions = [];
-    dom.previewImage.removeAttribute("src");
-    dom.detectPill.textContent = state.mode === "poster" ? "等待海报" : "等待单图";
-    setAiStatus("待机");
-    setOcrText("");
-    setPipelineStep(0);
-    renderCropOverlay();
-    renderCards();
-    updateFlashcard();
-  });
 
   dom.flashcard.addEventListener("click", () => {
     dom.flashcard.classList.toggle("is-flipped");
