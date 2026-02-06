@@ -457,6 +457,7 @@ const saveCardsToCloud = async () => {
   });
 
   setSyncStatus("已保存到云端");
+  updateActiveGroupCount(state.cards.length);
 };
 
 const renderGroups = () => {
@@ -523,6 +524,14 @@ const loadGroupCounts = async () => {
     updated.push({ ...group, count: count || 0 });
   }
   state.groups = updated;
+  renderGroupCards();
+};
+
+const updateActiveGroupCount = (count) => {
+  if (!state.activeGroupId) return;
+  state.groups = state.groups.map((group) =>
+    group.id === state.activeGroupId ? { ...group, count } : group
+  );
   renderGroupCards();
 };
 
@@ -738,6 +747,7 @@ const buildCardsFromBoxes = () => {
   reindexCards();
   renderCards();
   updateFlashcard();
+  updateActiveGroupCount(state.cards.length);
   if (state.activeGroupId) {
     setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
   }
@@ -803,6 +813,7 @@ const deleteCard = async (id) => {
   }
   renderCards();
   updateFlashcard();
+  updateActiveGroupCount(state.cards.length);
 
   if (!target?.uid || !supabaseClient || !state.user || !state.activeGroupId) {
     return;
