@@ -10,6 +10,8 @@ const state = {
   tempBox: null,
   dragging: null,
   user: null,
+  groups: [],
+  activeGroupId: null,
 };
 
 const mockCards = [
@@ -72,6 +74,9 @@ const dom = {
   syncSave: document.getElementById("sync-save"),
   syncLoad: document.getElementById("sync-load"),
   syncStatus: document.getElementById("sync-status"),
+  groupSelect: document.getElementById("group-select"),
+  groupName: document.getElementById("group-name"),
+  createGroup: document.getElementById("create-group"),
 };
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
@@ -124,6 +129,20 @@ const setSyncStatus = (text) => {
   if (dom.syncStatus) {
     dom.syncStatus.textContent = text;
   }
+};
+
+const generateId = () => {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return `card_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+};
+
+const ensureCardIds = () => {
+  state.cards = state.cards.map((card) => ({
+    ...card,
+    uid: card.uid || generateId(),
+  }));
 };
 
 const renderCropOverlay = () => {
@@ -301,11 +320,16 @@ const loadCardsFromCloud = async () => {
     setSyncStatus("请先登录");
     return;
   }
+  if (!(await ensureGroupSelected())) {
+    setSyncStatus("请先选择卡牌组");
+    return;
+  }
   setSyncStatus("加载中...");
   const { data, error } = await supabaseClient
     .from("cards")
-    .select("id,name,description,image_data,box,status")
+    .select("id,card_uid,name,description,image_data,box,status")
     .eq("user_id", state.user.id)
+    .eq("group_id", state.activeGroupId)
     .order("updated_at", { ascending: true });
 
   if (error) {
@@ -315,6 +339,7 @@ const loadCardsFromCloud = async () => {
 
   state.cards = (data || []).map((card, index) => ({
     id: index + 1,
+    uid: card.card_uid || generateId(),
     name: card.name || `角色 ${index + 1}`,
     description: card.description || "",
     image: card.image_data || "",
@@ -334,14 +359,22 @@ const saveCardsToCloud = async () => {
     setSyncStatus("请先登录");
     return;
   }
+  if (!(await ensureGroupSelected())) {
+    setSyncStatus("请先选择卡牌组");
+    return;
+  }
   if (!state.cards.length) {
     setSyncStatus("暂无卡牌可保存");
     return;
   }
   setSyncStatus("保存中...");
 
+  ensureCardIds();
+
   const payload = state.cards.map((card) => ({
     user_id: state.user.id,
+    group_id: state.activeGroupId,
+    card_uid: card.uid,
     name: card.name,
     description: card.description,
     image_data: card.image,
@@ -349,17 +382,9 @@ const saveCardsToCloud = async () => {
     status: card.status || "draft",
   }));
 
-  const { error: deleteError } = await supabaseClient
+  const { error } = await supabaseClient
     .from("cards")
-    .delete()
-    .eq("user_id", state.user.id);
-
-  if (deleteError) {
-    setSyncStatus("保存失败");
-    return;
-  }
-
-  const { error } = await supabaseClient.from("cards").insert(payload);
+    .upsert(payload, { onConflict: "card_uid" });
   if (error) {
     setSyncStatus("保存失败");
     return;
@@ -369,14 +394,100 @@ const saveCardsToCloud = async () => {
   await supabaseClient
     .from("study_sessions")
     .delete()
-    .eq("user_id", state.user.id);
+    .eq("user_id", state.user.id)
+    .eq("group_id", state.activeGroupId);
   await supabaseClient.from("study_sessions").insert({
     user_id: state.user.id,
+    group_id: state.activeGroupId,
     mistakes,
     training_index: state.trainingIndex,
   });
 
   setSyncStatus("已保存到云端");
+};
+
+const renderGroups = () => {
+  if (!dom.groupSelect) return;
+  dom.groupSelect.innerHTML = "";
+  state.groups.forEach((group) => {
+    const option = document.createElement("option");
+    option.value = group.id;
+    option.textContent = group.name;
+    dom.groupSelect.appendChild(option);
+  });
+  if (state.activeGroupId) {
+    dom.groupSelect.value = state.activeGroupId;
+  }
+};
+
+const loadGroupsFromCloud = async () => {
+  if (!supabaseClient || !state.user) return;
+  const { data, error } = await supabaseClient
+    .from("card_groups")
+    .select("id,name")
+    .eq("user_id", state.user.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    setSyncStatus("加载卡牌组失败");
+    return;
+  }
+  state.groups = data || [];
+  if (!state.activeGroupId && state.groups.length) {
+    state.activeGroupId = state.groups[0].id;
+  }
+  renderGroups();
+};
+
+const createGroup = async () => {
+  if (!supabaseClient || !state.user) {
+    setSyncStatus("请先登录");
+    return;
+  }
+  const name = dom.groupName?.value?.trim();
+  if (!name) {
+    setSyncStatus("请输入组名");
+    return;
+  }
+  const { data, error } = await supabaseClient
+    .from("card_groups")
+    .insert({ user_id: state.user.id, name })
+    .select("id,name")
+    .single();
+
+  if (error) {
+    setSyncStatus("创建组失败");
+    return;
+  }
+  state.groups.push(data);
+  state.activeGroupId = data.id;
+  if (dom.groupName) {
+    dom.groupName.value = "";
+  }
+  renderGroups();
+  setSyncStatus("已创建卡牌组");
+};
+
+const ensureGroupSelected = async () => {
+  if (state.activeGroupId) return true;
+  if (!supabaseClient || !state.user) return false;
+  if (state.groups.length) {
+    state.activeGroupId = state.groups[0].id;
+    renderGroups();
+    return true;
+  }
+  const { data, error } = await supabaseClient
+    .from("card_groups")
+    .insert({ user_id: state.user.id, name: "默认组" })
+    .select("id,name")
+    .single();
+  if (error) {
+    return false;
+  }
+  state.groups.push(data);
+  state.activeGroupId = data.id;
+  renderGroups();
+  return true;
 };
 
 const restoreSession = async () => {
@@ -388,11 +499,13 @@ const restoreSession = async () => {
   state.user = data.session?.user || null;
   setAuthStatus(state.user ? `已登录：${state.user.email}` : "未登录");
   if (state.user) {
+    await loadGroupsFromCloud();
     await loadCardsFromCloud();
     const { data: sessionData } = await supabaseClient
       .from("study_sessions")
       .select("mistakes,training_index")
       .eq("user_id", state.user.id)
+      .eq("group_id", state.activeGroupId)
       .maybeSingle();
     if (sessionData?.mistakes) {
       state.mistakes = new Set(sessionData.mistakes);
@@ -429,6 +542,7 @@ const buildCardsFromBoxes = () => {
     const suggestion = state.suggestions[index] || {};
     return {
       id: index + 1,
+      uid: generateId(),
       name: suggestion.name || `角色 ${index + 1}`,
       description: suggestion.description || "",
       image: cropImageFromBox(box),
@@ -589,6 +703,7 @@ const attachEvents = () => {
     }
     state.user = data.user;
     setAuthStatus(`已登录：${data.user.email}`);
+    await loadGroupsFromCloud();
     await loadCardsFromCloud();
   });
 
@@ -599,7 +714,10 @@ const attachEvents = () => {
     }
     await supabaseClient.auth.signOut();
     state.user = null;
+    state.groups = [];
+    state.activeGroupId = null;
     setAuthStatus("未登录");
+    renderGroups();
   });
 
   dom.signInGithub.addEventListener("click", async () => {
@@ -618,6 +736,15 @@ const attachEvents = () => {
     } else {
       setAuthStatus("已跳转到 GitHub 登录");
     }
+  });
+
+  dom.groupSelect?.addEventListener("change", () => {
+    state.activeGroupId = dom.groupSelect.value || null;
+    loadCardsFromCloud();
+  });
+
+  dom.createGroup?.addEventListener("click", () => {
+    createGroup();
   });
 
   dom.syncSave.addEventListener("click", () => {

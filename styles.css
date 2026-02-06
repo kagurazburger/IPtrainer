@@ -211,6 +211,21 @@ section {
   font-family: inherit;
 }
 
+.auth__panel select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  padding: 10px 12px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.auth__group {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
 .auth__actions {
   display: flex;
   gap: 10px;
