@@ -405,7 +405,7 @@ const saveCardsToCloud = async () => {
 
   const { error } = await supabaseClient
     .from("cards")
-    .upsert(payload, { onConflict: "card_uid" });
+    .upsert(payload, { onConflict: "user_id,card_uid" });
   if (error) {
     setSyncStatus("保存失败");
     return;
