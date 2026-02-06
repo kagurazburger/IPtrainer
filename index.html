@@ -77,12 +77,6 @@
           <div class="auth__panel">
             <h3>云端同步</h3>
             <p class="auth__hint">点击保存把当前卡牌上传到云端，外出时可直接练习。</p>
-            <label for="group-select">卡牌组</label>
-            <select id="group-select"></select>
-            <div class="auth__group">
-              <input id="group-name" type="text" placeholder="新建卡牌组名称" />
-              <button class="btn" id="create-group">创建组</button>
-            </div>
             <div class="auth__actions">
               <button class="btn primary" id="sync-save">保存到云端</button>
               <button class="btn ghost" id="sync-load">从云端加载</button>
@@ -151,6 +145,30 @@
         <div class="section-head">
           <h2>卡片编辑与确认</h2>
           <p>逐张确认角色名称与简介，支持批量通过进入记忆训练。</p>
+        </div>
+        <div class="group-panel">
+          <div class="group-panel__head">
+            <h3>卡牌组</h3>
+            <span class="group-status" id="group-status">请选择或创建组</span>
+          </div>
+          <div class="group-panel__row">
+            <label for="group-select">选择组</label>
+            <select id="group-select"></select>
+          </div>
+          <div class="group-panel__row">
+            <label for="group-name">新建组</label>
+            <div class="group-panel__actions">
+              <input id="group-name" type="text" placeholder="新建卡牌组名称" />
+              <button class="btn" id="create-group">创建组</button>
+            </div>
+          </div>
+          <div class="group-panel__row">
+            <label for="group-rename">修改名称</label>
+            <div class="group-panel__actions">
+              <input id="group-rename" type="text" placeholder="输入新名称" />
+              <button class="btn ghost" id="rename-group">保存名称</button>
+            </div>
+          </div>
         </div>
         <div class="card-grid" id="card-grid">
         </div>

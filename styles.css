@@ -226,6 +226,48 @@ section {
   gap: 10px;
 }
 
+.group-panel {
+  margin-top: 22px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+}
+
+.group-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-panel__row {
+  display: grid;
+  gap: 8px;
+}
+
+.group-panel__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.group-panel input,
+.group-panel select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  padding: 10px 12px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.group-status {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 .auth__actions {
   display: flex;
   gap: 10px;

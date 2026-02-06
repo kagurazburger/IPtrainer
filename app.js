@@ -77,6 +77,9 @@ const dom = {
   groupSelect: document.getElementById("group-select"),
   groupName: document.getElementById("group-name"),
   createGroup: document.getElementById("create-group"),
+  groupRename: document.getElementById("group-rename"),
+  renameGroup: document.getElementById("rename-group"),
+  groupStatus: document.getElementById("group-status"),
 };
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
@@ -128,6 +131,12 @@ const setAuthStatus = (text) => {
 const setSyncStatus = (text) => {
   if (dom.syncStatus) {
     dom.syncStatus.textContent = text;
+  }
+};
+
+const setGroupStatus = (text) => {
+  if (dom.groupStatus) {
+    dom.groupStatus.textContent = text;
   }
 };
 
@@ -418,6 +427,7 @@ const renderGroups = () => {
   if (state.activeGroupId) {
     dom.groupSelect.value = state.activeGroupId;
   }
+  setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
 };
 
 const loadGroupsFromCloud = async () => {
@@ -466,28 +476,46 @@ const createGroup = async () => {
   }
   renderGroups();
   setSyncStatus("已创建卡牌组");
+  setGroupStatus("已创建卡牌组");
 };
 
-const ensureGroupSelected = async () => {
+const ensureGroupSelected = () => {
   if (state.activeGroupId) return true;
-  if (!supabaseClient || !state.user) return false;
-  if (state.groups.length) {
-    state.activeGroupId = state.groups[0].id;
-    renderGroups();
-    return true;
+  setGroupStatus("请先选择或创建卡牌组");
+  return false;
+};
+
+const renameGroup = async () => {
+  if (!supabaseClient || !state.user) {
+    setGroupStatus("请先登录");
+    return;
   }
-  const { data, error } = await supabaseClient
+  if (!state.activeGroupId) {
+    setGroupStatus("请先选择卡牌组");
+    return;
+  }
+  const name = dom.groupRename?.value?.trim();
+  if (!name) {
+    setGroupStatus("请输入新名称");
+    return;
+  }
+  const { error } = await supabaseClient
     .from("card_groups")
-    .insert({ user_id: state.user.id, name: "默认组" })
-    .select("id,name")
-    .single();
+    .update({ name })
+    .eq("id", state.activeGroupId)
+    .eq("user_id", state.user.id);
   if (error) {
-    return false;
+    setGroupStatus("修改失败");
+    return;
   }
-  state.groups.push(data);
-  state.activeGroupId = data.id;
+  state.groups = state.groups.map((group) =>
+    group.id === state.activeGroupId ? { ...group, name } : group
+  );
+  if (dom.groupRename) {
+    dom.groupRename.value = "";
+  }
   renderGroups();
-  return true;
+  setGroupStatus("已更新组名称");
 };
 
 const restoreSession = async () => {
@@ -659,6 +687,9 @@ const attachEvents = () => {
     state.cards = state.cards.map((card) => ({ ...card, status: "confirmed" }));
     renderCards();
     updateFlashcard();
+    if (!ensureGroupSelected()) {
+      dom.groupSelect?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   });
 
   dom.generateCards.addEventListener("click", () => {
@@ -740,11 +771,16 @@ const attachEvents = () => {
 
   dom.groupSelect?.addEventListener("change", () => {
     state.activeGroupId = dom.groupSelect.value || null;
+    setGroupStatus(state.activeGroupId ? "已选择卡牌组" : "请选择或创建组");
     loadCardsFromCloud();
   });
 
   dom.createGroup?.addEventListener("click", () => {
     createGroup();
+  });
+
+  dom.renameGroup?.addEventListener("click", () => {
+    renameGroup();
   });
 
   dom.syncSave.addEventListener("click", () => {
