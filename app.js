@@ -151,28 +151,46 @@ const serializeGroupCards = (groupCards) => {
   }, {});
 };
 
+const buildLocalPayload = () => ({
+  version: 1,
+  groups: state.groups,
+  activeGroupId: state.activeGroupId,
+  groupCards: serializeGroupCards(state.groupCards),
+  deletedCardUids: state.deletedCardUids,
+  trainingIndex: state.trainingIndex,
+  trainingOrder: state.trainingOrder,
+  mistakes: Array.from(state.mistakes),
+  sync: {
+    dirty: state.sync.dirty,
+    lastCloudSyncAt: state.sync.lastCloudSyncAt,
+  },
+});
+
+const buildMinimalPayload = () => ({
+  version: 1,
+  groups: state.groups,
+  activeGroupId: state.activeGroupId,
+  trainingOrder: state.trainingOrder,
+  sync: {
+    dirty: state.sync.dirty,
+    lastCloudSyncAt: state.sync.lastCloudSyncAt,
+  },
+});
+
 const saveLocalState = (message = "已保存", status = "success") => {
   try {
-    const payload = {
-      version: 1,
-      groups: state.groups,
-      activeGroupId: state.activeGroupId,
-      groupCards: serializeGroupCards(state.groupCards),
-      deletedCardUids: state.deletedCardUids,
-      trainingIndex: state.trainingIndex,
-      trainingOrder: state.trainingOrder,
-      mistakes: Array.from(state.mistakes),
-      sync: {
-        dirty: state.sync.dirty,
-        lastCloudSyncAt: state.sync.lastCloudSyncAt,
-      },
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(buildLocalPayload()));
     setSaveStatus(message, status);
     return true;
   } catch (error) {
-    setSaveStatus(`保存失败：${error.message || "本地存储不可用"}`, "error");
-    return false;
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(buildMinimalPayload()));
+      setSaveStatus("本地空间不足，仅保存基础信息", "error");
+      return true;
+    } catch (fallbackError) {
+      setSaveStatus(`保存失败：${fallbackError.message || "本地存储不可用"}`, "error");
+      return false;
+    }
   }
 };
 
