@@ -132,13 +132,32 @@ const autoSaveNow = async () => {
   scheduleCloudSync();
 };
 
+const serializeGroupCards = (groupCards) => {
+  return Object.entries(groupCards || {}).reduce((acc, [groupId, cards]) => {
+    acc[groupId] = Array.isArray(cards)
+      ? cards.map((card) => ({
+          id: card.id,
+          uid: card.uid,
+          name: card.name,
+          description: card.description,
+          status: card.status,
+          starred: Boolean(card.starred),
+          updatedAt: card.updatedAt,
+          box: card.box || null,
+          image: "",
+        }))
+      : [];
+    return acc;
+  }, {});
+};
+
 const saveLocalState = (message = "已保存", status = "success") => {
   try {
     const payload = {
       version: 1,
       groups: state.groups,
       activeGroupId: state.activeGroupId,
-      groupCards: state.groupCards,
+      groupCards: serializeGroupCards(state.groupCards),
       deletedCardUids: state.deletedCardUids,
       trainingIndex: state.trainingIndex,
       trainingOrder: state.trainingOrder,
