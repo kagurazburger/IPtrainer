@@ -23,7 +23,7 @@
         <button class="btn ghost" data-panel-trigger="upload">导入图片</button>
         <button class="btn ghost" data-panel-trigger="groups">管理卡牌组</button>
         <button class="btn ghost" data-panel-trigger="auth">登录 / 注册</button>
-        <button class="btn" data-panel-trigger="sync">云端同步</button>
+        <span class="app-version" id="app-version">v?</span>
       </div>
     </header>
 
@@ -36,6 +36,7 @@
           </div>
           <div class="collection__actions">
             <button class="btn primary" id="confirm-all">保存</button>
+            <span class="save-status" id="save-status">本地自动保存</span>
           </div>
         </div>
         <div class="group-grid" id="group-grid"></div>
@@ -71,6 +72,7 @@
               <div class="segmented" id="mode-segment">
                 <button class="segmented__btn is-active" data-order="sequence">顺序</button>
                 <button class="segmented__btn" data-order="random">随机</button>
+                <button class="segmented__btn" data-order="shuffle">全随机</button>
                 <button class="segmented__btn" data-order="mistake">错题集</button>
               </div>
             </div>
@@ -165,21 +167,6 @@
     </div>
   </aside>
 
-  <aside class="panel" id="panel-sync" data-panel="sync">
-    <div class="panel__header">
-      <h3>云端同步</h3>
-      <button class="btn ghost panel__close" data-panel-close>关闭</button>
-    </div>
-    <div class="panel__body">
-      <p class="auth__hint">保存后可在其他设备继续练习。</p>
-      <div class="auth__actions">
-        <button class="btn primary" id="sync-save">保存到云端</button>
-        <button class="btn ghost" id="sync-load">从云端加载</button>
-      </div>
-      <div class="auth__status" id="sync-status">等待操作</div>
-    </div>
-  </aside>
-
   <aside class="panel" id="panel-groups" data-panel="groups">
     <div class="panel__header">
       <h3>卡牌组</h3>
@@ -218,6 +205,6 @@
   </aside>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260207-1"></script>
 </body>
 </html>

@@ -31,8 +31,12 @@ create table if not exists study_sessions (
 alter table cards add column if not exists card_uid text;
 alter table cards add column if not exists group_id uuid;
 alter table study_sessions add column if not exists group_id uuid;
+alter table cards add column if not exists starred boolean default false;
+
+update cards set card_uid = id::text where card_uid is null;
 
 create unique index if not exists cards_user_uid_unique on cards (user_id, card_uid);
+create index if not exists cards_user_group_updated_at on cards (user_id, group_id, updated_at);
 
 alter table cards enable row level security;
 alter table card_groups enable row level security;

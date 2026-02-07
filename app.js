@@ -14,6 +14,13 @@ const state = {
   activeGroupId: null,
   groupCards: {},
   groupLocked: false,
+  deletedCardUids: {},
+  shuffleOrder: [],
+  sync: {
+    dirty: false,
+    syncing: false,
+    lastCloudSyncAt: 0,
+  },
 };
 
 
@@ -45,9 +52,6 @@ const dom = {
   signIn: document.getElementById("sign-in"),
   signInGithub: document.getElementById("sign-in-github"),
   signOut: document.getElementById("sign-out"),
-  syncSave: document.getElementById("sync-save"),
-  syncLoad: document.getElementById("sync-load"),
-  syncStatus: document.getElementById("sync-status"),
   groupSelect: document.getElementById("group-select"),
   groupName: document.getElementById("group-name"),
   createGroup: document.getElementById("create-group"),
@@ -65,7 +69,14 @@ const dom = {
   panels: document.querySelectorAll(".panel"),
   groupGrid: document.getElementById("group-grid"),
   cardSectionMeta: document.getElementById("card-section-meta"),
+  saveStatus: document.getElementById("save-status"),
+  appVersion: document.getElementById("app-version"),
 };
+
+const APP_VERSION = "2026-02-07.2";
+if (dom.appVersion) {
+  dom.appVersion.textContent = `v${APP_VERSION}`;
+}
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
 const SUPABASE_URL = "https://boiznsjwyazawvubggxc.supabase.co";
@@ -73,6 +84,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_lTKSPVkBj94F3rcoGlXaUA_364PHBGf";
 const supabaseClient = window.supabase
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
+const LOCAL_STORAGE_KEY = "ipcatalogue.localState.v1";
+let localSaveTimer = null;
+let cloudSyncTimer = null;
+const CLOUD_SYNC_DEBOUNCE = 1200;
 
 const setActiveMode = (mode) => {
   state.mode = mode;
@@ -87,9 +102,13 @@ const setAuthStatus = (text) => {
   }
 };
 
-const setSyncStatus = (text) => {
-  if (dom.syncStatus) {
-    dom.syncStatus.textContent = text;
+const setSaveStatus = (text, state = "") => {
+  if (!dom.saveStatus) return;
+  dom.saveStatus.textContent = text;
+  if (state) {
+    dom.saveStatus.dataset.state = state;
+  } else {
+    delete dom.saveStatus.dataset.state;
   }
 };
 
@@ -106,9 +125,232 @@ const setUploadGroupStatus = (text) => {
 };
 
 const autoSaveNow = async () => {
-  if (!supabaseClient || !state.user || !state.activeGroupId) return;
+  if (!state.activeGroupId) return;
   if (!state.cards.length) return;
-  await saveCardsToCloud();
+  state.sync.dirty = true;
+  scheduleLocalSave("已自动保存");
+  scheduleCloudSync();
+};
+
+const saveLocalState = (message = "已保存", status = "success") => {
+  try {
+    const payload = {
+      version: 1,
+      groups: state.groups,
+      activeGroupId: state.activeGroupId,
+      groupCards: state.groupCards,
+      deletedCardUids: state.deletedCardUids,
+      trainingIndex: state.trainingIndex,
+      trainingOrder: state.trainingOrder,
+      mistakes: Array.from(state.mistakes),
+      sync: {
+        dirty: state.sync.dirty,
+        lastCloudSyncAt: state.sync.lastCloudSyncAt,
+      },
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    setSaveStatus(message, status);
+    return true;
+  } catch (error) {
+    setSaveStatus(`保存失败：${error.message || "本地存储不可用"}`, "error");
+    return false;
+  }
+};
+
+const scheduleLocalSave = (message = "已自动保存") => {
+  state.sync.dirty = true;
+  if (localSaveTimer) {
+    clearTimeout(localSaveTimer);
+  }
+  localSaveTimer = setTimeout(() => {
+    saveLocalState(message, "success");
+  }, 200);
+};
+
+const scheduleCloudSync = (message = "已同步到云端") => {
+  if (!supabaseClient || !state.user) {
+    setSaveStatus("已本地保存，登录后自动同步", "");
+    return;
+  }
+  if (cloudSyncTimer) {
+    clearTimeout(cloudSyncTimer);
+  }
+  cloudSyncTimer = setTimeout(() => {
+    syncAllGroupsToCloud(message);
+  }, CLOUD_SYNC_DEBOUNCE);
+};
+
+const getNowMs = () => Date.now();
+
+const ensureCardMeta = (card) => ({
+  ...card,
+  uid: card.uid || generateId(),
+  updatedAt: Number.isFinite(card.updatedAt) ? card.updatedAt : getNowMs(),
+});
+
+const touchCard = (card) => ({
+  ...card,
+  updatedAt: getNowMs(),
+});
+
+const buildShuffledOrder = () => {
+  const order = [...state.cards];
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  state.shuffleOrder = order.map((card) => card.uid || card.id);
+  return order;
+};
+
+const getShuffledCards = () => {
+  const ids = new Set(state.cards.map((card) => card.uid || card.id));
+  const isValid =
+    state.shuffleOrder.length === state.cards.length &&
+    state.shuffleOrder.every((id) => ids.has(id));
+  if (!isValid) {
+    return buildShuffledOrder();
+  }
+  const map = new Map(state.cards.map((card) => [card.uid || card.id, card]));
+  return state.shuffleOrder.map((id) => map.get(id)).filter(Boolean);
+};
+
+const syncAllGroupsToCloud = async (message = "已同步到云端") => {
+  if (!supabaseClient || !state.user) return false;
+  if (!state.groups.length) return true;
+  if (state.sync.syncing) return false;
+  state.sync.syncing = true;
+  setSaveStatus("同步中...", "");
+
+  try {
+    const groupPayload = state.groups.map((group) => ({
+      id: group.id,
+      user_id: state.user.id,
+      name: group.name,
+    }));
+
+    const { error: groupError } = await supabaseClient
+      .from("card_groups")
+      .upsert(groupPayload, { onConflict: "id" });
+    if (groupError) {
+      throw groupError;
+    }
+
+    for (const group of state.groups) {
+      const cards = state.groupCards[group.id] || [];
+      const normalized = cards.map((card) => ensureCardMeta(card));
+      state.groupCards[group.id] = normalized;
+
+      if (normalized.length) {
+        const cardPayload = normalized.map((card) => ({
+          user_id: state.user.id,
+          group_id: group.id,
+          card_uid: card.uid,
+          name: card.name,
+          description: card.description,
+          image_data: card.image,
+          box: card.box || null,
+          status: card.status || "draft",
+          starred: Boolean(card.starred),
+          updated_at: new Date(card.updatedAt).toISOString(),
+        }));
+
+        const { error: cardError } = await supabaseClient
+          .from("cards")
+          .upsert(cardPayload, { onConflict: "user_id,card_uid" });
+        if (cardError) {
+          throw cardError;
+        }
+      }
+
+      const deletedMap = state.deletedCardUids[group.id] || {};
+      const deletedUids = Object.keys(deletedMap);
+      if (deletedUids.length) {
+        const { error: deleteError } = await supabaseClient
+          .from("cards")
+          .delete()
+          .eq("user_id", state.user.id)
+          .eq("group_id", group.id)
+          .in("card_uid", deletedUids);
+        if (deleteError) {
+          throw deleteError;
+        }
+        delete state.deletedCardUids[group.id];
+      }
+    }
+
+    if (state.activeGroupId) {
+      const mistakes = Array.from(state.mistakes);
+      await supabaseClient
+        .from("study_sessions")
+        .delete()
+        .eq("user_id", state.user.id)
+        .eq("group_id", state.activeGroupId);
+      await supabaseClient.from("study_sessions").insert({
+        user_id: state.user.id,
+        group_id: state.activeGroupId,
+        mistakes,
+        training_index: state.trainingIndex,
+      });
+    }
+
+    state.sync.dirty = false;
+    state.sync.lastCloudSyncAt = Date.now();
+    saveLocalState(message, "success");
+    refreshLocalGroupCache();
+    state.sync.syncing = false;
+    return true;
+  } catch (error) {
+    state.sync.syncing = false;
+    setSaveStatus(`同步失败：${error.message || "请检查网络"}`, "error");
+    return false;
+  }
+};
+
+const refreshLocalGroupCache = () => {
+  if (state.activeGroupId) {
+    state.groupCards[state.activeGroupId] = state.cards;
+    updateActiveGroupCount(state.cards.length);
+  }
+  renderGroupCards();
+};
+
+const loadLocalState = () => {
+  let payload = null;
+  try {
+    payload = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "null");
+  } catch (error) {
+    payload = null;
+  }
+  if (!payload || !Array.isArray(payload.groups)) {
+    return false;
+  }
+  state.groups = payload.groups;
+  state.groupCards = Object.entries(payload.groupCards || {}).reduce(
+    (acc, [groupId, cards]) => {
+      acc[groupId] = Array.isArray(cards) ? cards.map((card) => ensureCardMeta(card)) : [];
+      return acc;
+    },
+    {}
+  );
+  state.deletedCardUids = payload.deletedCardUids || {};
+  state.activeGroupId = payload.activeGroupId || state.groups[0]?.id || null;
+  state.trainingIndex = Number.isFinite(payload.trainingIndex) ? payload.trainingIndex : 0;
+  state.trainingOrder = payload.trainingOrder || "sequence";
+  state.mistakes = new Set(payload.mistakes || []);
+  state.sync.dirty = Boolean(payload.sync?.dirty);
+  state.sync.lastCloudSyncAt = Number(payload.sync?.lastCloudSyncAt) || 0;
+  setActiveCards(getGroupCards(state.activeGroupId));
+  renderGroups();
+  refreshLocalGroupCache();
+  renderCards();
+  updateFlashcard();
+  if (state.activeGroupId) {
+    setCardSectionMeta(`当前组：${getGroupName(state.activeGroupId)}`);
+  } else {
+    setCardSectionMeta("未选择组");
+  }
+  return true;
 };
 
 const lockGroupSelection = (message) => {
@@ -144,7 +386,7 @@ const closePanels = () => {
 
 const reindexCards = () => {
   const updated = state.cards.map((card, index) => ({
-    ...card,
+    ...ensureCardMeta(card),
     id: index + 1,
   }));
   setActiveCards(updated);
@@ -158,10 +400,7 @@ const generateId = () => {
 };
 
 const ensureCardIds = () => {
-  const updated = state.cards.map((card) => ({
-    ...card,
-    uid: card.uid || generateId(),
-  }));
+  const updated = state.cards.map((card) => ensureCardMeta(card));
   setActiveCards(updated);
 };
 
@@ -178,12 +417,6 @@ const getGroupName = (groupId) =>
   state.groups.find((group) => group.id === groupId)?.name || "";
 
 const switchGroup = async (nextGroupId, { loadCloud = false } = {}) => {
-  if (state.groupLocked && nextGroupId !== state.activeGroupId) {
-    const notice = "当前组已锁定，请先保存到云端再切换";
-    setGroupStatus(notice);
-    setUploadGroupStatus(notice);
-    return;
-  }
   if (nextGroupId === state.activeGroupId) return;
   if (state.activeGroupId) {
     state.groupCards[state.activeGroupId] = state.cards;
@@ -209,7 +442,10 @@ const switchGroup = async (nextGroupId, { loadCloud = false } = {}) => {
   setCardSectionMeta(activeName ? `当前组：${activeName}` : "未选择组");
 
   if (loadCloud) {
-    setCardSectionMeta("正在加载卡牌...");
+    if (state.sync.dirty) {
+      const ok = await syncAllGroupsToCloud("已同步本地到云端");
+      if (!ok) return;
+    }
     await loadCardsFromCloud();
   }
 };
@@ -261,6 +497,7 @@ const renderCards = () => {
       <div class="card__footer">
         <span class="card__status">${card.status === "confirmed" ? "已确认" : "待确认"}</span>
         <button class="btn tiny" data-action="toggle" data-id="${card.id}">${card.status === "confirmed" ? "改回草稿" : "确认卡片"}</button>
+        <button class="btn tiny ghost" data-action="star" data-id="${card.id}">${card.starred ? "已星标" : "星标"}</button>
         <button class="btn tiny ghost" data-action="delete" data-id="${card.id}">删除</button>
       </div>
     `;
@@ -283,7 +520,8 @@ const updateFlashcard = () => {
   const card = order[state.trainingIndex % order.length];
   dom.flashName.textContent = card.name;
   dom.flashDesc.textContent = card.description;
-  dom.flashTag.textContent = card.status === "confirmed" ? "已确认" : "待确认";
+  const statusText = card.status === "confirmed" ? "已确认" : "待确认";
+  dom.flashTag.textContent = card.starred ? `${statusText} · 已星标` : statusText;
   dom.flashImage.style.backgroundImage = `url(${card.image})`;
   dom.statusBox.textContent = `已完成 ${state.trainingIndex + 1} / ${order.length}`;
 };
@@ -294,7 +532,10 @@ const getTrainingOrder = () => {
     return mistakes.length ? mistakes : state.cards;
   }
   if (state.trainingOrder === "random") {
-    return [...state.cards].sort(() => 0.5 - Math.random());
+    return weightedShuffle(state.cards);
+  }
+  if (state.trainingOrder === "shuffle") {
+    return getShuffledCards();
   }
   return state.cards;
 };
@@ -339,36 +580,87 @@ const getAuthInput = () => {
 
 const loadCardsFromCloud = async () => {
   if (!supabaseClient || !state.user) {
-    setSyncStatus("请先登录");
+    setSaveStatus("请先登录以同步云端", "error");
     return;
   }
   if (!(await ensureGroupSelected())) {
-    setSyncStatus("请先选择卡牌组");
+    setSaveStatus("请先选择卡牌组", "error");
     return;
   }
   const requestGroupId = state.activeGroupId;
-  setSyncStatus("加载中...");
+  setSaveStatus("云端加载中...", "");
   const { data, error } = await supabaseClient
     .from("cards")
-    .select("id,card_uid,name,description,image_data,box,status")
+    .select("id,card_uid,name,description,image_data,box,status,starred,updated_at")
     .eq("user_id", state.user.id)
     .eq("group_id", requestGroupId)
     .order("updated_at", { ascending: true });
 
   if (error) {
-    setSyncStatus(`加载失败：${error.message || "请检查配置"}`);
+    setSaveStatus(`加载失败：${error.message || "请检查配置"}`, "error");
     return;
   }
 
-  const loaded = (data || []).map((card, index) => ({
+  const localCards = getGroupCards(requestGroupId);
+  const localByUid = new Map(localCards.map((card) => [card.uid, card]));
+  const deletedMap = state.deletedCardUids[requestGroupId] || {};
+  const backfill = [];
+
+  const merged = [];
+  (data || []).forEach((card, index) => {
+    const uid = card.card_uid || card.id || generateId();
+    if (!card.card_uid && card.id) {
+      backfill.push({ id: card.id, uid });
+    }
+    const cloudUpdatedAt = Date.parse(card.updated_at || "") || 0;
+    const local = localByUid.get(uid);
+    const deletedAt = deletedMap[uid] || 0;
+
+    if (deletedAt && deletedAt >= cloudUpdatedAt) {
+      return;
+    }
+
+    if (deletedAt && cloudUpdatedAt > deletedAt) {
+      delete deletedMap[uid];
+    }
+
+    if (local && Number.isFinite(local.updatedAt) && local.updatedAt > cloudUpdatedAt) {
+      merged.push(local);
+      localByUid.delete(uid);
+      return;
+    }
+
+    merged.push({
+      id: index + 1,
+      uid,
+      name: card.name || `角色 ${index + 1}`,
+      description: card.description || "",
+      image: card.image_data || "",
+      status: card.status || "draft",
+      starred: Boolean(card.starred),
+      box: card.box || null,
+      updatedAt: cloudUpdatedAt || getNowMs(),
+    });
+    localByUid.delete(uid);
+  });
+
+  localByUid.forEach((card) => {
+    if (card?.uid && deletedMap[card.uid]) return;
+    merged.push(card);
+  });
+
+  const loaded = merged.map((card, index) => ({
+    ...card,
     id: index + 1,
-    uid: card.card_uid || generateId(),
-    name: card.name || `角色 ${index + 1}`,
-    description: card.description || "",
-    image: card.image_data || "",
-    status: card.status || "draft",
-    box: card.box || null,
   }));
+
+  if (backfill.length) {
+    await Promise.all(
+      backfill.map((item) =>
+        supabaseClient.from("cards").update({ card_uid: item.uid }).eq("id", item.id)
+      )
+    );
+  }
   if (requestGroupId) {
     state.groupCards[requestGroupId] = loaded;
   }
@@ -376,68 +668,33 @@ const loadCardsFromCloud = async () => {
     return;
   }
   setActiveCards(loaded);
+  updateActiveGroupCount(loaded.length);
   state.boxes = [];
   state.tempBox = null;
   renderCropOverlay();
   renderCards();
   updateFlashcard();
   setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
-  setSyncStatus("已加载云端卡牌");
+  setSaveStatus("已加载云端卡牌", "success");
 };
 
 const saveCardsToCloud = async () => {
-  if (!supabaseClient || !state.user) {
-    setSyncStatus("请先登录");
-    return;
-  }
   if (!(await ensureGroupSelected())) {
-    setSyncStatus("请先选择卡牌组");
+    setSaveStatus("请先选择卡牌组", "error");
     return;
   }
   if (!state.cards.length) {
-    setSyncStatus("暂无卡牌可保存");
+    setSaveStatus("暂无卡牌可保存", "error");
     return;
   }
-  setSyncStatus("保存中...");
-
+  state.sync.dirty = true;
   ensureCardIds();
-
-  const payload = state.cards.map((card) => ({
-    user_id: state.user.id,
-    group_id: state.activeGroupId,
-    card_uid: card.uid,
-    name: card.name,
-    description: card.description,
-    image_data: card.image,
-    box: card.box || null,
-    status: card.status || "draft",
-  }));
-
-  const { error } = await supabaseClient
-    .from("cards")
-    .upsert(payload, { onConflict: "user_id,card_uid" });
-  if (error) {
-    setSyncStatus(`保存失败：${error.message || "请检查配置"}`);
-    return;
+  if (state.activeGroupId) {
+    state.groupCards[state.activeGroupId] = state.cards;
   }
-
-  const mistakes = Array.from(state.mistakes);
-  await supabaseClient
-    .from("study_sessions")
-    .delete()
-    .eq("user_id", state.user.id)
-    .eq("group_id", state.activeGroupId);
-  await supabaseClient.from("study_sessions").insert({
-    user_id: state.user.id,
-    group_id: state.activeGroupId,
-    mistakes,
-    training_index: state.trainingIndex,
-  });
-
-  setSyncStatus("已保存到云端");
-  unlockGroupSelection("已保存到云端，当前组已解锁");
   updateActiveGroupCount(state.cards.length);
-  await loadGroupCounts();
+  saveLocalState("已本地保存", "success");
+  scheduleCloudSync("保存成功，已同步云端");
 };
 
 const renderGroups = () => {
@@ -471,17 +728,25 @@ const renderGroupCards = () => {
   }
 
   state.groups.forEach((group) => {
+    const cachedCards = state.groupCards[group.id];
+    const localCount = Array.isArray(cachedCards) ? cachedCards.length : null;
+    const displayCount =
+      group.id === state.activeGroupId
+        ? state.cards.length
+        : localCount !== null
+          ? localCount
+          : group.count ?? 0;
     const card = document.createElement("div");
     card.className = "group-card";
     card.dataset.groupId = group.id;
     card.innerHTML = `
       <div class="group-card__top">
         <div class="group-card__icon">📁</div>
-        <div class="group-card__badge">${group.count ?? 0}</div>
+        <div class="group-card__badge">${displayCount}</div>
       </div>
       <div>
         <div class="group-card__title">${group.name}</div>
-        <div class="group-card__sub">${group.count ?? 0} cards</div>
+        <div class="group-card__sub">${displayCount} cards</div>
       </div>
       <div class="group-card__actions">
         <button class="group-card__btn primary">进入训练</button>
@@ -524,7 +789,7 @@ const loadGroupsFromCloud = async () => {
     .order("created_at", { ascending: true });
 
   if (error) {
-    setSyncStatus("加载卡牌组失败");
+    setSaveStatus("加载卡牌组失败", "error");
     return;
   }
   state.groups = data || [];
@@ -536,29 +801,17 @@ const loadGroupsFromCloud = async () => {
 };
 
 const createGroup = async (nameInput, statusSetter) => {
-  if (!supabaseClient || !state.user) {
-    setSyncStatus("请先登录");
-    statusSetter("请先登录后创建组");
-    return;
-  }
   const name = nameInput?.value?.trim();
   if (!name) {
-    setSyncStatus("请输入组名");
     statusSetter("请输入组名");
+    setSaveStatus("请输入组名", "error");
     return;
   }
-  statusSetter("创建中...");
-  const { data, error } = await supabaseClient
-    .from("card_groups")
-    .insert({ user_id: state.user.id, name })
-    .select("id,name")
-    .single();
-
-  if (error) {
-    setSyncStatus("创建组失败");
-    statusSetter(`创建失败：${error.message || "请检查配置"}`);
-    return;
-  }
+  const data = {
+    id: generateId(),
+    name,
+    count: 0,
+  };
   state.groups.push(data);
   state.activeGroupId = data.id;
   state.groupCards[data.id] = [];
@@ -572,8 +825,9 @@ const createGroup = async (nameInput, statusSetter) => {
   renderGroupCards();
   renderCards();
   updateFlashcard();
-  setSyncStatus("已创建卡牌组");
   statusSetter("已创建卡牌组");
+  saveLocalState("已创建卡牌组", "success");
+  scheduleCloudSync("已创建卡牌组，自动同步云端");
 };
 
 const ensureGroupSelected = () => {
@@ -583,10 +837,6 @@ const ensureGroupSelected = () => {
 };
 
 const renameGroup = async () => {
-  if (!supabaseClient || !state.user) {
-    setGroupStatus("请先登录");
-    return;
-  }
   if (!state.activeGroupId) {
     setGroupStatus("请先选择卡牌组");
     return;
@@ -594,16 +844,6 @@ const renameGroup = async () => {
   const name = dom.groupRename?.value?.trim();
   if (!name) {
     setGroupStatus("请输入新名称");
-    return;
-  }
-  setGroupStatus("保存中...");
-  const { error } = await supabaseClient
-    .from("card_groups")
-    .update({ name })
-    .eq("id", state.activeGroupId)
-    .eq("user_id", state.user.id);
-  if (error) {
-    setGroupStatus(`修改失败：${error.message || "请检查配置"}`);
     return;
   }
   state.groups = state.groups.map((group) =>
@@ -614,13 +854,11 @@ const renameGroup = async () => {
   }
   renderGroups();
   setGroupStatus("已更新组名称");
+  saveLocalState("已更新组名称", "success");
+  scheduleCloudSync("已更新组名称，自动同步云端");
 };
 
 const deleteGroup = async () => {
-  if (!supabaseClient || !state.user) {
-    setGroupStatus("请先登录");
-    return;
-  }
   if (!state.activeGroupId) {
     setGroupStatus("请先选择卡牌组");
     return;
@@ -628,50 +866,67 @@ const deleteGroup = async () => {
   const ok = window.confirm("确定删除当前卡牌组及其卡片吗？此操作无法撤销。");
   if (!ok) return;
 
-  setGroupStatus("删除中...");
-  await supabaseClient
-    .from("cards")
-    .delete()
-    .eq("user_id", state.user.id)
-    .eq("group_id", state.activeGroupId);
-  await supabaseClient
-    .from("study_sessions")
-    .delete()
-    .eq("user_id", state.user.id)
-    .eq("group_id", state.activeGroupId);
-
-  const { error } = await supabaseClient
-    .from("card_groups")
-    .delete()
-    .eq("id", state.activeGroupId)
-    .eq("user_id", state.user.id);
-
-  if (error) {
-    setGroupStatus(`删除失败：${error.message || "请检查配置"}`);
-    return;
-  }
-
   state.groups = state.groups.filter((group) => group.id !== state.activeGroupId);
+  delete state.groupCards[state.activeGroupId];
+  delete state.deletedCardUids[state.activeGroupId];
+  const deletedGroupId = state.activeGroupId;
   state.activeGroupId = state.groups[0]?.id || null;
-  state.cards = [];
-  unlockGroupSelection();
+  setActiveCards(getGroupCards(state.activeGroupId));
   renderGroups();
   renderGroupCards();
   renderCards();
   updateFlashcard();
   setGroupStatus("已删除卡牌组");
+  saveLocalState("已删除卡牌组", "success");
+
+  if (supabaseClient && state.user) {
+    try {
+      await supabaseClient
+        .from("cards")
+        .delete()
+        .eq("user_id", state.user.id)
+        .eq("group_id", deletedGroupId);
+      await supabaseClient
+        .from("study_sessions")
+        .delete()
+        .eq("user_id", state.user.id)
+        .eq("group_id", deletedGroupId);
+      await supabaseClient
+        .from("card_groups")
+        .delete()
+        .eq("id", deletedGroupId)
+        .eq("user_id", state.user.id);
+      setSaveStatus("已删除卡牌组并同步云端", "success");
+    } catch (error) {
+      setSaveStatus(`云端删除失败：${error.message || "请检查网络"}`, "error");
+    }
+  } else {
+    scheduleCloudSync("已删除卡牌组，登录后自动同步");
+  }
 };
 
 const restoreSession = async () => {
+  const restored = loadLocalState();
   if (!supabaseClient) {
-    setAuthStatus("Supabase 未加载");
-    setGroupStatus("请检查网络后重试");
+    setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
+    if (!restored) {
+      renderGroups();
+      renderGroupCards();
+      renderCards();
+      updateFlashcard();
+      setGroupStatus("请先创建卡牌组");
+    }
     return;
   }
+
   const { data } = await supabaseClient.auth.getSession();
   state.user = data.session?.user || null;
   setAuthStatus(state.user ? `已登录：${state.user.email}` : "未登录");
+
   if (state.user) {
+    if (state.sync.dirty) {
+      await syncAllGroupsToCloud("已同步本地到云端");
+    }
     await loadGroupsFromCloud();
     await loadCardsFromCloud();
     const { data: sessionData } = await supabaseClient
@@ -687,7 +942,7 @@ const restoreSession = async () => {
       state.trainingIndex = sessionData.training_index;
     }
     updateFlashcard();
-  } else {
+  } else if (!restored) {
     setGroupStatus("请先登录后管理卡牌组");
   }
 };
@@ -727,6 +982,8 @@ const buildCardsFromBoxes = () => {
       description: suggestion.description || "",
       image: cropImageFromBox(box),
       status: "draft",
+      starred: false,
+      updatedAt: getNowMs(),
       box,
     };
   });
@@ -735,7 +992,6 @@ const buildCardsFromBoxes = () => {
   renderCards();
   updateFlashcard();
   updateActiveGroupCount(state.cards.length);
-  lockGroupSelection("当前组已锁定，保存到云端后可切换");
   autoSaveNow();
   if (state.activeGroupId) {
     setCardSectionMeta(`当前组：${dom.groupSelect?.selectedOptions?.[0]?.textContent || ""}`);
@@ -773,19 +1029,33 @@ const clampBox = (box) => {
 const updateCardField = (id, field, value) => {
   const updated = state.cards.map((card) => {
     if (card.id === id) {
-      return { ...card, [field]: value };
+      return touchCard({ ...card, [field]: value });
     }
     return card;
   });
   setActiveCards(updated);
   updateFlashcard();
+  autoSaveNow();
 };
 
 const toggleCardStatus = (id) => {
   const updated = state.cards.map((card) => {
     if (card.id === id) {
       const nextStatus = card.status === "confirmed" ? "draft" : "confirmed";
-      return { ...card, status: nextStatus };
+      return touchCard({ ...card, status: nextStatus });
+    }
+    return card;
+  });
+  setActiveCards(updated);
+  renderCards();
+  updateFlashcard();
+  autoSaveNow();
+};
+
+const toggleCardStar = (id) => {
+  const updated = state.cards.map((card) => {
+    if (card.id === id) {
+      return touchCard({ ...card, starred: !card.starred });
     }
     return card;
   });
@@ -797,6 +1067,15 @@ const toggleCardStatus = (id) => {
 
 const deleteCard = async (id) => {
   const target = state.cards.find((card) => card.id === id);
+  if (target && !target.uid) {
+    target.uid = generateId();
+  }
+  if (target?.uid && state.activeGroupId) {
+    if (!state.deletedCardUids[state.activeGroupId]) {
+      state.deletedCardUids[state.activeGroupId] = {};
+    }
+    state.deletedCardUids[state.activeGroupId][target.uid] = getNowMs();
+  }
   setActiveCards(state.cards.filter((card) => card.id !== id));
   state.mistakes.delete(id);
   reindexCards();
@@ -806,21 +1085,7 @@ const deleteCard = async (id) => {
   renderCards();
   updateFlashcard();
   updateActiveGroupCount(state.cards.length);
-  if (!state.cards.length) {
-    unlockGroupSelection("当前组已解锁");
-  }
   autoSaveNow();
-
-  if (!target?.uid || !supabaseClient || !state.user || !state.activeGroupId) {
-    return;
-  }
-
-  await supabaseClient
-    .from("cards")
-    .delete()
-    .eq("user_id", state.user.id)
-    .eq("group_id", state.activeGroupId)
-    .eq("card_uid", target.uid);
 };
 
 const markCard = (known) => {
@@ -832,13 +1097,19 @@ const markCard = (known) => {
   } else {
     state.mistakes.delete(card.id);
   }
+  autoSaveNow();
 };
 
 const goToNext = (step) => {
   if (!state.cards.length) return;
   const order = getTrainingOrder();
-  state.trainingIndex = (state.trainingIndex + step + order.length) % order.length;
+  const nextIndex = (state.trainingIndex + step + order.length) % order.length;
+  if (state.trainingOrder === "shuffle" && step > 0 && nextIndex === 0) {
+    buildShuffledOrder();
+  }
+  state.trainingIndex = nextIndex;
   updateFlashcard();
+  autoSaveNow();
 };
 
 const attachEvents = () => {
@@ -892,6 +1163,9 @@ const attachEvents = () => {
     if (target.dataset.action === "toggle") {
       toggleCardStatus(Number(target.dataset.id));
     }
+    if (target.dataset.action === "star") {
+      toggleCardStar(Number(target.dataset.id));
+    }
     if (target.dataset.action === "delete") {
       deleteCard(Number(target.dataset.id));
     }
@@ -900,8 +1174,10 @@ const attachEvents = () => {
   dom.confirmAll.addEventListener("click", () => {
     if (!ensureGroupSelected()) {
       dom.groupSelect?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setSaveStatus("请先选择卡牌组", "error");
       return;
     }
+    setSaveStatus("保存中...", "");
     saveCardsToCloud();
   });
 
@@ -947,6 +1223,9 @@ const attachEvents = () => {
     }
     state.user = data.user;
     setAuthStatus(`已登录：${data.user.email}`);
+    if (state.sync.dirty) {
+      await syncAllGroupsToCloud("已同步本地到云端");
+    }
     await loadGroupsFromCloud();
     await loadCardsFromCloud();
   });
@@ -958,12 +1237,7 @@ const attachEvents = () => {
     }
     await supabaseClient.auth.signOut();
     state.user = null;
-    state.groups = [];
-    state.activeGroupId = null;
-    state.groupCards = {};
-    unlockGroupSelection();
     setAuthStatus("未登录");
-    renderGroups();
   });
 
   dom.signInGithub.addEventListener("click", async () => {
@@ -985,12 +1259,6 @@ const attachEvents = () => {
   });
 
   dom.groupSelect?.addEventListener("change", async () => {
-    if (state.groupLocked) {
-      if (dom.groupSelect) dom.groupSelect.value = state.activeGroupId || "";
-      if (dom.uploadGroupSelect) dom.uploadGroupSelect.value = state.activeGroupId || "";
-      setGroupStatus("当前组已锁定，请先保存到云端再切换");
-      return;
-    }
     const nextGroupId = dom.groupSelect.value || null;
     if (dom.uploadGroupSelect) {
       dom.uploadGroupSelect.value = nextGroupId || "";
@@ -998,6 +1266,7 @@ const attachEvents = () => {
     setGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
     setUploadGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
     await switchGroup(nextGroupId, { loadCloud: true });
+    scheduleLocalSave();
   });
 
   dom.createGroup?.addEventListener("click", () => {
@@ -1009,12 +1278,6 @@ const attachEvents = () => {
   });
 
   dom.uploadGroupSelect?.addEventListener("change", async () => {
-    if (state.groupLocked) {
-      if (dom.uploadGroupSelect) dom.uploadGroupSelect.value = state.activeGroupId || "";
-      if (dom.groupSelect) dom.groupSelect.value = state.activeGroupId || "";
-      setUploadGroupStatus("当前组已锁定，请先保存到云端再切换");
-      return;
-    }
     const nextGroupId = dom.uploadGroupSelect.value || null;
     if (dom.groupSelect) {
       dom.groupSelect.value = nextGroupId || "";
@@ -1022,6 +1285,7 @@ const attachEvents = () => {
     setGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
     setUploadGroupStatus(nextGroupId ? "已选择卡牌组" : "请选择或创建组");
     await switchGroup(nextGroupId, { loadCloud: true });
+    scheduleLocalSave();
   });
 
   dom.uploadCreateGroup?.addEventListener("click", () => {
@@ -1033,11 +1297,6 @@ const attachEvents = () => {
     if (!target) return;
     const groupId = target.dataset.groupId;
     if (!groupId) return;
-    if (state.groupLocked && groupId !== state.activeGroupId) {
-      setGroupStatus("当前组已锁定，请先保存到云端再切换");
-      setUploadGroupStatus("当前组已锁定，请先保存到云端再切换");
-      return;
-    }
     if (dom.groupSelect) {
       dom.groupSelect.value = groupId;
     }
@@ -1047,6 +1306,7 @@ const attachEvents = () => {
     setGroupStatus("已选择卡牌组");
     setUploadGroupStatus("已选择卡牌组");
     await switchGroup(groupId, { loadCloud: true });
+    scheduleLocalSave();
     const training = document.getElementById("training");
     training?.scrollIntoView({ behavior: "smooth" });
   });
@@ -1055,11 +1315,11 @@ const attachEvents = () => {
     deleteGroup();
   });
 
-  dom.syncSave.addEventListener("click", () => {
+  dom.syncSave?.addEventListener("click", () => {
     saveCardsToCloud();
   });
 
-  dom.syncLoad.addEventListener("click", () => {
+  dom.syncLoad?.addEventListener("click", () => {
     loadCardsFromCloud();
   });
 
@@ -1089,6 +1349,9 @@ const attachEvents = () => {
     });
     state.trainingOrder = button.dataset.order;
     state.trainingIndex = 0;
+    if (state.trainingOrder === "shuffle") {
+      buildShuffledOrder();
+    }
     updateFlashcard();
   });
 
@@ -1209,9 +1472,6 @@ const init = () => {
   updateFlashcard();
   attachEvents();
   restoreSession();
-  if (!supabaseClient) {
-    setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
-  }
 };
 
 init();
