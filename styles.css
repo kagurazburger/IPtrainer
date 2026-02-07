@@ -403,6 +403,19 @@ img {
 
 .flashcard__back {
   transform: rotateY(180deg);
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  gap: 12px;
+}
+
+.flashcard__back h3,
+.flashcard__back p,
+.flashcard__back .flashcard__meta {
+  width: 100%;
 }
 
 .flashcard.is-flipped .flashcard__front {
