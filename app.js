@@ -260,6 +260,13 @@ const getShuffledCards = () => {
 const syncAllGroupsToCloud = async (message = "已同步到云端") => {
   if (!supabaseClient || !state.user) return false;
   if (!state.groups.length) return true;
+  const hasAnyCards = state.groups.some(
+    (group) => (state.groupCards[group.id] || []).length > 0
+  );
+  if (!hasAnyCards) {
+    setSaveStatus("空内容不写入云端", "error");
+    return false;
+  }
   if (state.sync.syncing) return false;
   state.sync.syncing = true;
   setSaveStatus("同步中...", "");
