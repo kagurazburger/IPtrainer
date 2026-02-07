@@ -16,6 +16,7 @@ const state = {
   groupLocked: false,
   deletedCardUids: {},
   shuffleOrder: [],
+  updateTargetCardId: null,
   sync: {
     dirty: false,
     syncing: false,
@@ -424,6 +425,17 @@ const setCardSectionMeta = (text) => {
 const closePanels = () => {
   dom.panels.forEach((panel) => panel.classList.remove("is-active"));
   dom.panelOverlay?.classList.remove("is-active");
+  state.updateTargetCardId = null;
+  if (dom.generateCards) {
+    dom.generateCards.textContent = "确认框选";
+  }
+};
+
+const openPanel = (panelId) => {
+  dom.panels.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.panel === panelId);
+  });
+  dom.panelOverlay?.classList.add("is-active");
 };
 
 const reindexCards = () => {
@@ -592,6 +604,44 @@ const setPreviewImage = (src) => {
     dom.updatePanel.classList.remove("is-active");
   }
   renderCropOverlay();
+};
+
+const setUpdateMode = (cardId) => {
+  state.updateTargetCardId = cardId;
+  if (dom.generateCards) {
+    dom.generateCards.textContent = "确认替换";
+  }
+  setSaveStatus("请选择新图片并框选后点击确认替换", "");
+};
+
+const applySingleImageReplace = () => {
+  if (!state.updateTargetCardId) return false;
+  if (!state.boxes.length) {
+    setSaveStatus("请先框选图片", "error");
+    return false;
+  }
+  const targetId = state.updateTargetCardId;
+  const image = cropImageFromBox(state.boxes[0]);
+  const updated = state.cards.map((card) => {
+    if (card.id === targetId) {
+      return touchCard({ ...card, image });
+    }
+    return card;
+  });
+  setActiveCards(updated);
+  renderCards();
+  updateFlashcard();
+  autoSaveNow();
+  state.boxes = [];
+  state.tempBox = null;
+  renderCropOverlay();
+  state.updateTargetCardId = null;
+  if (dom.generateCards) {
+    dom.generateCards.textContent = "确认框选";
+  }
+  setSaveStatus("图片已替换并同步中", "success");
+  closePanels();
+  return true;
 };
 
 const buildUpdateImagesFromBoxes = () => {
@@ -1304,6 +1354,17 @@ const attachEvents = () => {
 
   dom.cardGrid.addEventListener("click", (event) => {
     const target = event.target;
+    const imageTarget = target.closest(".card__image");
+    if (imageTarget) {
+      const cardEl = target.closest(".card");
+      const idInput = cardEl?.querySelector("[data-id]");
+      const cardId = Number(idInput?.dataset?.id);
+      if (!Number.isNaN(cardId)) {
+        setUpdateMode(cardId);
+        openPanel("upload");
+      }
+      return;
+    }
     if (target.dataset.action === "toggle") {
       toggleCardStatus(Number(target.dataset.id));
     }
@@ -1326,6 +1387,10 @@ const attachEvents = () => {
   });
 
   dom.generateCards.addEventListener("click", () => {
+    if (state.updateTargetCardId) {
+      applySingleImageReplace();
+      return;
+    }
     buildCardsFromBoxes();
   });
 
