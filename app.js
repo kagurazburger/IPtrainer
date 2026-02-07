@@ -285,7 +285,7 @@ const syncAllGroupsToCloud = async (message = "已同步到云端") => {
           card_uid: card.uid,
           name: card.name,
           description: card.description,
-          image_data: card.image,
+          ...(card.image ? { image_data: card.image } : {}),
           box: card.box || null,
           status: card.status || "draft",
           starred: Boolean(card.starred),
