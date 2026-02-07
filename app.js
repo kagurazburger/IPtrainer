@@ -653,6 +653,8 @@ const loadCardsFromCloud = async () => {
     const cloudUpdatedAt = Date.parse(card.updated_at || "") || 0;
     const local = localByUid.get(uid);
     const deletedAt = deletedMap[uid] || 0;
+    const cloudHasImage = Boolean(card.image_data);
+    const localMissingImage = local && (!local.image || local.image === "");
 
     if (deletedAt && deletedAt >= cloudUpdatedAt) {
       return;
@@ -660,6 +662,23 @@ const loadCardsFromCloud = async () => {
 
     if (deletedAt && cloudUpdatedAt > deletedAt) {
       delete deletedMap[uid];
+    }
+
+    if (localMissingImage && cloudHasImage) {
+      // Prefer cloud image when local cache intentionally stripped it.
+      merged.push({
+        id: index + 1,
+        uid,
+        name: card.name || `角色 ${index + 1}`,
+        description: card.description || "",
+        image: card.image_data || "",
+        status: card.status || "draft",
+        starred: Boolean(card.starred),
+        box: card.box || null,
+        updatedAt: cloudUpdatedAt || getNowMs(),
+      });
+      localByUid.delete(uid);
+      return;
     }
 
     if (local && Number.isFinite(local.updatedAt) && local.updatedAt > cloudUpdatedAt) {
