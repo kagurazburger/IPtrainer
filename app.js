@@ -357,6 +357,7 @@ const loadLocalState = () => {
   try {
     payload = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "null");
   } catch (error) {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
     payload = null;
   }
   if (!payload || !Array.isArray(payload.groups)) {
