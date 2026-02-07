@@ -31,6 +31,10 @@ const dom = {
   previewImage: document.getElementById("preview-image"),
   cropOverlay: document.getElementById("crop-overlay"),
   generateCards: document.getElementById("generate-cards"),
+  updateImages: document.getElementById("update-images"),
+  updatePanel: document.getElementById("update-panel"),
+  updateList: document.getElementById("update-list"),
+  applyUpdate: document.getElementById("apply-update"),
   cardGrid: document.getElementById("card-grid"),
   confirmAll: document.getElementById("confirm-all"),
   flashcard: document.getElementById("flashcard"),
@@ -584,7 +588,90 @@ const setPreviewImage = (src) => {
   state.tempBox = null;
   state.selectedBoxIndex = null;
   state.suggestions = [];
+  if (dom.updatePanel) {
+    dom.updatePanel.classList.remove("is-active");
+  }
   renderCropOverlay();
+};
+
+const buildUpdateImagesFromBoxes = () => {
+  if (!state.boxes.length) return [];
+  return state.boxes.map((box) => cropImageFromBox(box));
+};
+
+const renderUpdateList = (images) => {
+  if (!dom.updateList || !dom.updatePanel) return;
+  dom.updateList.innerHTML = "";
+  if (!images.length) {
+    dom.updatePanel.classList.remove("is-active");
+    return;
+  }
+  dom.updatePanel.classList.add("is-active");
+
+  images.forEach((src, index) => {
+    const row = document.createElement("div");
+    row.className = "update-item";
+    row.innerHTML = `
+      <img src="${src}" alt="update-${index + 1}" />
+      <select data-update-index="${index}">
+        <option value="">选择要替换的卡牌</option>
+        ${state.cards
+          .map((card) => `<option value="${card.id}">${card.name || `卡牌 ${card.id}`}</option>`)
+          .join("")}
+      </select>
+    `;
+    dom.updateList.appendChild(row);
+  });
+};
+
+const applyImageUpdates = () => {
+  if (!dom.updateList) return;
+  const selects = dom.updateList.querySelectorAll("select[data-update-index]");
+  const updates = [];
+  selects.forEach((select) => {
+    const index = Number(select.dataset.updateIndex);
+    const cardId = Number(select.value);
+    if (!Number.isNaN(index) && cardId) {
+      updates.push({ index, cardId });
+    }
+  });
+
+  if (!updates.length) {
+    setSaveStatus("请先选择要替换的卡牌", "error");
+    return;
+  }
+
+  const used = new Set();
+  for (const update of updates) {
+    if (used.has(update.cardId)) {
+      setSaveStatus("同一张卡牌不能重复替换", "error");
+      return;
+    }
+    used.add(update.cardId);
+  }
+
+  const images = buildUpdateImagesFromBoxes();
+  const updated = state.cards.map((card) => {
+    const match = updates.find((item) => item.cardId === card.id);
+    if (!match) return card;
+    const nextImage = images[match.index];
+    if (!nextImage) return card;
+    return touchCard({ ...card, image: nextImage });
+  });
+
+  setActiveCards(updated);
+  renderCards();
+  updateFlashcard();
+  updateActiveGroupCount(state.cards.length);
+  autoSaveNow();
+
+  if (dom.updatePanel) {
+    dom.updatePanel.classList.remove("is-active");
+  }
+  state.boxes = [];
+  state.tempBox = null;
+  renderCropOverlay();
+  setSaveStatus("图片已替换并同步中", "success");
 };
 
 const handleFile = (file) => {
@@ -1240,6 +1327,27 @@ const attachEvents = () => {
 
   dom.generateCards.addEventListener("click", () => {
     buildCardsFromBoxes();
+  });
+
+  dom.updateImages?.addEventListener("click", () => {
+    if (!ensureGroupSelected()) {
+      setSaveStatus("请先选择卡牌组", "error");
+      return;
+    }
+    if (!state.cards.length) {
+      setSaveStatus("当前组没有卡牌可替换", "error");
+      return;
+    }
+    const images = buildUpdateImagesFromBoxes();
+    if (!images.length) {
+      setSaveStatus("请先框选图片再更新", "error");
+      return;
+    }
+    renderUpdateList(images);
+  });
+
+  dom.applyUpdate?.addEventListener("click", () => {
+    applyImageUpdates();
   });
 
   dom.signUp.addEventListener("click", async () => {
