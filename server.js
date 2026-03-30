@@ -10,6 +10,10 @@ app.use(cors());
 app.use(express.json({ limit: "20mb" }));
 app.use(express.static(path.join(__dirname)));
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 const BAIDU_API_KEY = process.env.BAIDU_API_KEY || "YOUR_BAIDU_API_KEY";
 const BAIDU_SECRET_KEY = process.env.BAIDU_SECRET_KEY || "YOUR_BAIDU_SECRET_KEY";
 const ARK_API_KEY = process.env.ARK_API_KEY || "YOUR_ARK_API_KEY";
@@ -211,6 +215,11 @@ app.post("/api/parse-image", async (req, res) => {
       message: error.message,
     });
   }
+});
+
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/")) return next();
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
