@@ -7,20 +7,39 @@ import MultipleChoice from './components/MultipleChoice';
 import AuthModal from './components/AuthModal';
 import UserAuthModal from './components/UserAuthModal';
 import DeckChatModal from './components/DeckChatModal';
+import IpCatalogueModal from './components/IpCatalogueModal';
 import SettingsModal from './components/SettingsModal';
 import { generateCardsFromContent, generateVisualForCard } from './services/geminiService';
-import { loadDefaultDecks, saveDeckToFile, ocrImage, generateCardsFromPrompt } from './services/localService';
+import { loadDefaultDecks, saveDeckToFileWithOptions, ocrImage, generateCardsFromPrompt, uploadCardImage, uploadIpImage } from './services/localService';
 import { UniversalInputHandler, InputResult } from './services/universalInputHandler';
 import { generateFlashcards } from './services/openaiService';
 import { getCurrentUser, updateUserApiConfig, logoutUser } from './services/userService';
 
-const CLOUD_STORAGE_URL = "https://kvdb.io/A8vjB6vN5n9z2z2z2z2z2z/"; 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const CLOUD_STORAGE_PROXY_URL = `${API_BASE_URL}/cloud/`;
+const CLOUD_STORAGE_URL = "https://kvdb.io/A8vjB6vN5n9z2z2z2z2z2z/";
+
+const cloudFetch = async (key: string, init?: RequestInit): Promise<Response> => {
+  const normalizedKey = key.trim();
+  const encodedKey = encodeURIComponent(normalizedKey);
+
+  try {
+    const proxyResponse = await fetch(`${CLOUD_STORAGE_PROXY_URL}${encodedKey}`, init);
+    if (!proxyResponse.ok) {
+      return await fetch(`${CLOUD_STORAGE_URL}${normalizedKey}`, init);
+    }
+    return proxyResponse;
+  } catch {
+    return await fetch(`${CLOUD_STORAGE_URL}${normalizedKey}`, init);
+  }
+};
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [mode, setMode] = useState<AppMode>('LIBRARY');
   const [sessionCards, setSessionCards] = useState<FlashcardData[]>([]);
+  const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +57,8 @@ const App: React.FC = () => {
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState(false);
   const [isDeckChatOpen, setIsDeckChatOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isIpCatalogueOpen, setIsIpCatalogueOpen] = useState(false);
+  const [ipCatalogueDeckId, setIpCatalogueDeckId] = useState<string | null>(null);
 
   // For robust deletion without browser confirm blocks
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -46,6 +67,20 @@ const App: React.FC = () => {
   const isInitialMount = useRef(true);
   const jsonImportInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
+
+  const normalizeCards = (rawCards: any[]): FlashcardData[] => {
+    const stamp = Date.now();
+    return rawCards.map((c, i) => ({
+      id: c.id || `card-${stamp}-${i}`,
+      ip: c.ip ?? '',
+      section: typeof c.section === 'string' ? c.section : String(c.section ?? ''),
+      question: c.question ?? '',
+      hint: c.hint ?? '',
+      text: c.text ?? '',
+      image: c.image ?? '',
+      ipImage: c.ipImage ?? c.ip_image ?? ''
+    }));
+  };
 
   useEffect(() => {
     // 首先检查当前登录用户
@@ -82,8 +117,9 @@ const App: React.FC = () => {
         const loadedDecks: Deck[] = data.decks.map((deck, idx) => ({
           id: `deck-${Date.now()}-${idx}`,
           title: deck.title,
-          cards: Array.isArray(deck.cards) ? deck.cards : [],
-          createdAt: Date.now()
+          cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
+          createdAt: Date.now(),
+          sourcePath: deck.source_path
         }));
         if (loadedDecks.length > 0) {
           setDecks(loadedDecks);
@@ -110,6 +146,13 @@ const App: React.FC = () => {
       }
     }
   }, [decks, user]);
+
+  useEffect(() => {
+    if (!isIpCatalogueOpen) return;
+    if (!ipCatalogueDeckId && decks.length > 0) {
+      setIpCatalogueDeckId(decks[0].id);
+    }
+  }, [isIpCatalogueOpen, ipCatalogueDeckId, decks]);
 
   const handleKeySelect = async () => {
     if ((window as any).aistudio?.openSelectKey) {
@@ -217,8 +260,9 @@ const App: React.FC = () => {
         const loadedDecks: Deck[] = data.decks.map((deck, idx) => ({
           id: `deck-${Date.now()}-${idx}`,
           title: deck.title,
-          cards: Array.isArray(deck.cards) ? deck.cards : [],
-          createdAt: Date.now()
+          cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
+          createdAt: Date.now(),
+          sourcePath: deck.source_path
         }));
         setDecks(loadedDecks.length > 0 ? loadedDecks : [{ id: 'default-deck', title: 'Starter Pack', cards: DEFAULT_CARDS, createdAt: Date.now() }]);
       })
@@ -331,7 +375,7 @@ const App: React.FC = () => {
     }
   };
 
-  const convertBreadToDeck = () => {
+  const convertBreadToDeck = async () => {
     if (!currentBread || currentBread.flashcards.length === 0) {
       setGlobalError({ message: '没有闪卡可以转换为卡组', isQuota: false });
       return;
@@ -345,7 +389,8 @@ const App: React.FC = () => {
       question: flashcard.q,
       hint: '',
       text: flashcard.a,
-      image: ''
+      image: '',
+      ipImage: ''
     }));
 
     // 创建新的卡组
@@ -364,14 +409,17 @@ const App: React.FC = () => {
     localStorage.setItem('live_memory_trainer_v8', JSON.stringify(updatedDecks));
 
     // 保存到文件
-    saveDeckToFile(newDeck.title, newDeck.cards.map(c => ({
-      ip: c.ip,
-      section: c.section,
-      question: c.question,
-      hint: c.hint,
-      text: c.text,
-      image: c.image || ''
-    }))).catch(err => console.error('Save deck:', err));
+    try {
+      const response = await saveDeckToFileWithOptions(
+        newDeck.title,
+        serializeCardsForSave(newDeck.cards)
+      );
+      if (response?.path) {
+        setDecks(prev => prev.map(d => d.id === newDeck.id ? { ...d, sourcePath: response.path } : d));
+      }
+    } catch (err) {
+      console.error('Save deck:', err);
+    }
 
     // 如果用户已登录，同步到云端
     if (user?.syncKey) {
@@ -400,8 +448,9 @@ const App: React.FC = () => {
         const localDecks: Deck[] = localData.decks.map((deck, idx) => ({
           id: `local-${Date.now()}-${idx}`,
           title: deck.title,
-          cards: Array.isArray(deck.cards) ? deck.cards : [],
-          createdAt: Date.now()
+          cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
+          createdAt: Date.now(),
+          sourcePath: deck.source_path
         }));
         
         // Merge current decks with local folder decks
@@ -433,7 +482,7 @@ const App: React.FC = () => {
     setSyncError(null);
     const payload: CloudPayload = { decks: data, userConfig: { volcano, preferences, transcriptionLanguage }, updatedAt: Date.now() };
     try {
-      const response = await fetch(`${CLOUD_STORAGE_URL}${key}`, { 
+      const response = await cloudFetch(key, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify(payload) 
@@ -444,7 +493,7 @@ const App: React.FC = () => {
       console.log('Cloud sync successful');
     } catch (e) { 
       console.error("Cloud push failed:", e);
-      setSyncError('云端同步失败，可用「导出全部」备份到本地');
+      setSyncError('云端同步失败（网络或跨域），可用「导出全部」先备份到本地');
     } finally { 
       setIsSyncing(false); 
     }
@@ -454,7 +503,7 @@ const App: React.FC = () => {
     if (!key) return;
     setIsSyncing(true);
     try {
-      const response = await fetch(`${CLOUD_STORAGE_URL}${key}`);
+      const response = await cloudFetch(key);
       if (response.ok) {
         const cloudData: CloudPayload = await response.json();
         if (cloudData.decks && cloudData.decks.length > 0) {
@@ -467,8 +516,9 @@ const App: React.FC = () => {
               const localDecks: Deck[] = localData.decks.map((deck, idx) => ({
                 id: `local-${Date.now()}-${idx}`,
                 title: deck.title,
-                cards: Array.isArray(deck.cards) ? deck.cards : [],
-                createdAt: Date.now()
+                cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
+                createdAt: Date.now(),
+                sourcePath: deck.source_path
               }));
               
               // Merge: combine cloud and local decks, avoiding duplicates by title
@@ -498,8 +548,9 @@ const App: React.FC = () => {
               const localDecks: Deck[] = localData.decks.map((deck, idx) => ({
                 id: `local-${Date.now()}-${idx}`,
                 title: deck.title,
-                cards: Array.isArray(deck.cards) ? deck.cards : [],
-                createdAt: Date.now()
+                cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
+                createdAt: Date.now(),
+                sourcePath: deck.source_path
               }));
               if (localDecks.length > 0) {
                 setDecks(localDecks);
@@ -535,7 +586,7 @@ const App: React.FC = () => {
             const localDecks: Deck[] = localData.decks.map((deck, idx) => ({
               id: `local-${Date.now()}-${idx}`,
               title: deck.title,
-              cards: Array.isArray(deck.cards) ? deck.cards : [],
+              cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
               createdAt: Date.now()
             }));
             if (localDecks.length > 0) {
@@ -557,7 +608,7 @@ const App: React.FC = () => {
           const localDecks: Deck[] = localData.decks.map((deck, idx) => ({
             id: `local-${Date.now()}-${idx}`,
             title: deck.title,
-            cards: Array.isArray(deck.cards) ? deck.cards : [],
+            cards: Array.isArray(deck.cards) ? normalizeCards(deck.cards) : [],
             createdAt: Date.now()
           }));
           if (localDecks.length > 0) {
@@ -605,6 +656,92 @@ const App: React.FC = () => {
     }
   };
 
+  const serializeCardsForSave = (cards: FlashcardData[]) => (
+    cards.map(c => ({
+      ip: c.ip,
+      section: c.section,
+      question: c.question,
+      hint: c.hint,
+      text: c.text,
+      image: c.image || '',
+      ip_image: c.ipImage || ''
+    }))
+  );
+
+  const persistDeckToFile = async (deck: Deck, cards: FlashcardData[]) => {
+    try {
+      const response = await saveDeckToFileWithOptions(
+        deck.title,
+        serializeCardsForSave(cards),
+        { sourcePath: deck.sourcePath, overwrite: true }
+      );
+      if (response?.path && response.path !== deck.sourcePath) {
+        setDecks(prev => prev.map(d => d.id === deck.id ? { ...d, sourcePath: response.path } : d));
+      }
+    } catch (err) {
+      console.error('Save deck:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setGlobalError({ message: `保存卡组失败：${msg}`, isQuota: false });
+    }
+  };
+
+  const handleUploadCardImage = async (file: File, card: FlashcardData) => {
+    if (!activeDeckId) {
+      setGlobalError({ message: '未找到当前卡组，无法保存图片。', isQuota: false });
+      return;
+    }
+    const deck = decks.find(d => d.id === activeDeckId);
+    if (!deck) {
+      setGlobalError({ message: '未找到当前卡组，无法保存图片。', isQuota: false });
+      return;
+    }
+
+    const { imagePath, imageUrl } = await uploadCardImage(file, deck.title, card.id);
+    const storedImage = imagePath || imageUrl;
+    if (!storedImage) {
+      throw new Error('Image upload returned empty path');
+    }
+
+    const updatedDeck: Deck = {
+      ...deck,
+      cards: deck.cards.map(c => c.id === card.id ? { ...c, image: storedImage } : c)
+    };
+
+    setDecks(prev => prev.map(d => d.id === deck.id ? updatedDeck : d));
+    setSessionCards(prev => prev.map(c => c.id === card.id ? { ...c, image: storedImage } : c));
+
+    await persistDeckToFile(updatedDeck, updatedDeck.cards);
+  };
+
+  const handleUploadIpImage = async (file: File, deckId: string, ip: string) => {
+    const trimmedIp = ip.trim();
+    if (!trimmedIp) {
+      setGlobalError({ message: 'IP 不能为空，无法保存图片。', isQuota: false });
+      return;
+    }
+    const deck = decks.find(d => d.id === deckId);
+    if (!deck) {
+      setGlobalError({ message: '未找到当前卡组，无法保存 IP 图片。', isQuota: false });
+      return;
+    }
+
+    const { imagePath, imageUrl } = await uploadIpImage(file, deck.title, trimmedIp);
+    const storedImage = imagePath || imageUrl;
+    if (!storedImage) {
+      throw new Error('IP image upload returned empty path');
+    }
+
+    const updatedCards = deck.cards.map(c => c.ip === trimmedIp ? { ...c, ipImage: storedImage } : c);
+    const updatedDeck: Deck = { ...deck, cards: updatedCards };
+
+    setDecks(prev => prev.map(d => d.id === deck.id ? updatedDeck : d));
+    if (activeDeckId === deck.id) {
+      setSessionCards(prev => prev.map(c => c.ip === trimmedIp ? { ...c, ipImage: storedImage } : c));
+    }
+
+    await persistDeckToFile(updatedDeck, updatedDeck.cards);
+  };
+
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -636,6 +773,7 @@ const App: React.FC = () => {
             hint: c.hint ?? '',
             text: c.text ?? '',
             image: c.image ?? '',
+            ipImage: c.ipImage ?? c.ip_image ?? ''
           })),
           createdAt: Date.now(),
         };
@@ -645,7 +783,16 @@ const App: React.FC = () => {
           return next;
         });
         setGlobalError(null);
-        saveDeckToFile(newDeck.title, newDeck.cards.map(c => ({ ip: c.ip, section: c.section, question: c.question, hint: c.hint, text: c.text, image: c.image || '' }))).catch(err => console.error('Save deck:', err));
+        saveDeckToFileWithOptions(
+          newDeck.title,
+          serializeCardsForSave(newDeck.cards)
+        )
+          .then((response) => {
+            if (response?.path) {
+              setDecks(prev => prev.map(d => d.id === newDeckId ? { ...d, sourcePath: response.path } : d));
+            }
+          })
+          .catch(err => console.error('Save deck:', err));
       } catch (err) {
         console.error('Import JSON error:', err);
         setGlobalError({ message: `JSON 解析失败：${err instanceof Error ? err.message : String(err)}`, isQuota: false });
@@ -693,6 +840,7 @@ const App: React.FC = () => {
             hint: c.hint ?? '',
             text: c.text ?? '',
             image: c.image ?? '',
+            ipImage: c.ipImage ?? c.ip_image ?? ''
           })) : [],
           createdAt: d.createdAt ?? Date.now(),
         }));
@@ -746,7 +894,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[#0a0a0a] text-gray-100 overflow-x-hidden">
       <header className="sticky top-0 z-[100] bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 px-6 py-4 flex items-center justify-between">
-         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setMode('LIBRARY')}>
+         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setMode('LIBRARY'); setActiveDeckId(null); }}>
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center"><span className="text-black font-black text-sm">LM</span></div>
             <h1 className="text-sm font-bold tracking-tighter uppercase">Memory Trainer</h1>
          </div>
@@ -829,6 +977,18 @@ const App: React.FC = () => {
                   {currentBread ? '当前面包' : '记忆面包'}
                 </button>
                 <button onClick={() => setIsDeckChatOpen(true)} className="px-6 py-3 bg-white/10 border border-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 hover:bg-white/20" title="根据卡组内容向 LLM 提问，如总结话术">卡牌助手</button>
+                <button
+                  onClick={() => {
+                    if (decks.length > 0) {
+                      setIpCatalogueDeckId(decks[0].id);
+                    }
+                    setIsIpCatalogueOpen(true);
+                  }}
+                  disabled={decks.length === 0}
+                  className="px-6 py-3 bg-white/10 border border-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  IP Catalogue
+                </button>
                 <button onClick={() => jsonImportInputRef.current?.click()} className="px-6 py-3 bg-white/10 border border-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 hover:bg-white/20">从 JSON 导入</button>
                 <input ref={jsonImportInputRef} type="file" accept=".json" hidden onChange={handleImportJson} />
                 <button onClick={handleExportAll} className="px-6 py-3 bg-white/10 border border-white/20 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 hover:bg-white/20" title="下载全部卡组为一份 JSON，可传到手机后「从备份恢复」">导出全部</button>
@@ -981,8 +1141,8 @@ const App: React.FC = () => {
                     <h3 className="text-2xl font-black mb-2 tracking-tight">{deck.title}</h3>
                     <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-10">{deck.cards.length} Integrated Assets</p>
                     <div className="grid grid-cols-2 gap-3 relative z-[50]">
-                      <button onClick={() => { setSessionCards(deck.cards); setCurrentIndex(0); setMode('STUDY_MCQ'); }} className="py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl">Evaluate</button>
-                      <button onClick={() => { setSessionCards(deck.cards); setCurrentIndex(0); setMode('REVIEW_FLASHCARDS'); }} className="py-4 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Recall</button>
+                      <button onClick={() => { setSessionCards(deck.cards); setCurrentIndex(0); setMode('STUDY_MCQ'); setActiveDeckId(deck.id); }} className="py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl">Evaluate</button>
+                      <button onClick={() => { setSessionCards(deck.cards); setCurrentIndex(0); setMode('REVIEW_FLASHCARDS'); setActiveDeckId(deck.id); }} className="py-4 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Recall</button>
                     </div>
                   </div>
                 );
@@ -994,10 +1154,30 @@ const App: React.FC = () => {
         {(mode === 'STUDY_MCQ' || mode === 'REVIEW_FLASHCARDS') && sessionCards.length > 0 && (
           <div className="w-full flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700">
             <div className="w-full max-w-2xl flex justify-between items-center mb-10 px-4">
-              <button onClick={() => setMode('LIBRARY')} className="text-white/30 hover:text-white transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"><Icons.ArrowLeft className="w-3 h-3" /> Back</button>
+              <button onClick={() => { setMode('LIBRARY'); setActiveDeckId(null); }} className="text-white/30 hover:text-white transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"><Icons.ArrowLeft className="w-3 h-3" /> Back</button>
               <div className="text-[10px] font-mono font-black tracking-[0.4em] text-white/20 uppercase">{currentIndex + 1} / {sessionCards.length}</div>
             </div>
-            {mode === 'STUDY_MCQ' ? <MultipleChoice card={sessionCards[currentIndex]} allCards={sessionCards} onNext={() => setCurrentIndex(prev => (prev + 1) % sessionCards.length)} isVisualizing={visualizingIds.has(sessionCards[currentIndex].id)} /> : <Flashcard card={sessionCards[currentIndex]} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} isVisualizing={visualizingIds.has(sessionCards[currentIndex].id)} onRescan={() => {}} user={user} />}
+            {mode === 'STUDY_MCQ' ? (
+              <MultipleChoice
+                card={sessionCards[currentIndex]}
+                allCards={sessionCards}
+                onNext={() => setCurrentIndex(prev => (prev + 1) % sessionCards.length)}
+                isVisualizing={visualizingIds.has(sessionCards[currentIndex].id)}
+                onUploadImage={handleUploadCardImage}
+                ipImage={sessionCards[currentIndex].ipImage}
+              />
+            ) : (
+              <Flashcard
+                card={sessionCards[currentIndex]}
+                isFlipped={isFlipped}
+                onFlip={() => setIsFlipped(!isFlipped)}
+                isVisualizing={visualizingIds.has(sessionCards[currentIndex].id)}
+                onRescan={() => {}}
+                user={user}
+                onUploadImage={handleUploadCardImage}
+                ipImage={sessionCards[currentIndex].ipImage}
+              />
+            )}
             <div className="mt-12 flex gap-8">
               <button onClick={() => { setCurrentIndex(prev => (prev - 1 + sessionCards.length) % sessionCards.length); setIsFlipped(false); }} className="w-16 h-16 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center hover:bg-white/10 transition-all"><Icons.ArrowLeft /></button>
               <button onClick={() => { setCurrentIndex(prev => (prev + 1) % sessionCards.length); setIsFlipped(false); }} className="w-16 h-16 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center hover:bg-white/10 transition-all"><Icons.ArrowRight /></button>
@@ -1025,6 +1205,15 @@ const App: React.FC = () => {
         isOpen={isUserAuthModalOpen}
         onClose={() => setIsUserAuthModalOpen(false)}
         onLogin={handleUserLogin}
+      />
+
+      <IpCatalogueModal
+        open={isIpCatalogueOpen}
+        decks={decks}
+        selectedDeckId={ipCatalogueDeckId}
+        onSelectDeckId={(deckId) => setIpCatalogueDeckId(deckId)}
+        onClose={() => setIsIpCatalogueOpen(false)}
+        onUploadIpImage={handleUploadIpImage}
       />
 
       <DeckChatModal open={isDeckChatOpen} onClose={() => setIsDeckChatOpen(false)} decks={decks} />
