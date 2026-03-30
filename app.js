@@ -84,12 +84,27 @@ if (dom.appVersion) {
 }
 
 const jumpButtons = document.querySelectorAll("[data-jump]");
-const SUPABASE_URL = "https://boiznsjwyazawvubggxc.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_lTKSPVkBj94F3rcoGlXaUA_364PHBGf";
+const getLocalValue = (key) => {
+  try {
+    return localStorage.getItem(key) || "";
+  } catch (_) {
+    return "";
+  }
+};
+
+const SUPABASE_URL =
+  window.__SUPABASE_URL__ ||
+  getLocalValue("ipcatalogue.supabase.url") ||
+  "https://boiznsjwyazawvubggxc.supabase.co";
+const SUPABASE_ANON_KEY =
+  window.__SUPABASE_ANON_KEY__ ||
+  getLocalValue("ipcatalogue.supabase.anonKey") ||
+  "sb_publishable_lTKSPVkBj94F3rcoGlXaUA_364PHBGf";
 const supabaseClient = window.supabase
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 const LOCAL_STORAGE_KEY = "ipcatalogue.localState.v1";
+const LOCAL_AUTH_STORAGE_KEY = "ipcatalogue.localAuth.v1";
 let localSaveTimer = null;
 let cloudSyncTimer = null;
 const CLOUD_SYNC_DEBOUNCE = 1200;
@@ -105,6 +120,54 @@ const setAuthStatus = (text) => {
   if (dom.authStatus) {
     dom.authStatus.textContent = text;
   }
+};
+
+const isLocalUser = () => Boolean(state.user?.isLocal);
+const canUseCloud = () => Boolean(supabaseClient && state.user && !isLocalUser());
+
+const isNetworkFetchError = (error) => {
+  const msg = String(error?.message || error || "").toLowerCase();
+  return msg.includes("failed to fetch") || msg.includes("network") || msg.includes("fetch");
+};
+
+const loadLocalAuthUsers = () => {
+  try {
+    const raw = localStorage.getItem(LOCAL_AUTH_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+};
+
+const saveLocalAuthUsers = (users) => {
+  try {
+    localStorage.setItem(LOCAL_AUTH_STORAGE_KEY, JSON.stringify(users || {}));
+  } catch (_) {
+    return;
+  }
+};
+
+const registerLocalUser = (email, password) => {
+  const users = loadLocalAuthUsers();
+  if (users[email]) {
+    return { ok: false, message: "本地账号已存在，可直接登录" };
+  }
+  users[email] = { password };
+  saveLocalAuthUsers(users);
+  return { ok: true };
+};
+
+const loginLocalUser = (email, password) => {
+  const users = loadLocalAuthUsers();
+  if (!users[email]) {
+    return { ok: false, message: "本地账号不存在，请先注册" };
+  }
+  if (users[email].password !== password) {
+    return { ok: false, message: "本地账号密码错误" };
+  }
+  state.user = { id: `local:${email}`, email, isLocal: true };
+  return { ok: true };
 };
 
 const setSaveStatus = (text, state = "") => {
@@ -210,7 +273,7 @@ const scheduleLocalSave = (message = "已自动保存") => {
 };
 
 const scheduleCloudSync = (message = "已同步到云端") => {
-  if (!supabaseClient || !state.user) {
+  if (!canUseCloud()) {
     setSaveStatus("已本地保存，登录后自动同步", "");
     return;
   }
@@ -258,7 +321,7 @@ const getShuffledCards = () => {
 };
 
 const syncAllGroupsToCloud = async (message = "已同步到云端") => {
-  if (!supabaseClient || !state.user) return false;
+  if (!canUseCloud()) return false;
   if (!state.groups.length) return true;
   const hasAnyCards = state.groups.some(
     (group) => (state.groupCards[group.id] || []).length > 0
@@ -761,7 +824,7 @@ const getAuthInput = () => {
 };
 
 const loadCardsFromCloud = async () => {
-  if (!supabaseClient || !state.user) {
+  if (!canUseCloud()) {
     setSaveStatus("请先登录以同步云端", "error");
     return;
   }
@@ -959,7 +1022,7 @@ const renderGroupCards = () => {
 };
 
 const loadGroupCounts = async () => {
-  if (!supabaseClient || !state.user || !state.groups.length) return;
+  if (!canUseCloud() || !state.groups.length) return;
   const updated = [];
   for (const group of state.groups) {
     const { count } = await supabaseClient
@@ -982,7 +1045,7 @@ const updateActiveGroupCount = (count) => {
 };
 
 const loadGroupsFromCloud = async () => {
-  if (!supabaseClient || !state.user) return;
+  if (!canUseCloud()) return;
   const { data, error } = await supabaseClient
     .from("card_groups")
     .select("id,name")
@@ -1080,7 +1143,7 @@ const deleteGroup = async () => {
   setGroupStatus("已删除卡牌组");
   saveLocalState("已删除卡牌组", "success");
 
-  if (supabaseClient && state.user) {
+  if (canUseCloud()) {
     try {
       await supabaseClient
         .from("cards")
@@ -1120,9 +1183,18 @@ const restoreSession = async () => {
     return;
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  state.user = data.session?.user || null;
-  setAuthStatus(state.user ? `已登录：${state.user.email}` : "未登录");
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    state.user = data.session?.user || null;
+    setAuthStatus(state.user ? `已登录：${state.user.email}` : "未登录");
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      setAuthStatus("云端登录不可达（网络或 Supabase 域名异常），可先使用本地账号");
+      state.user = null;
+      return;
+    }
+    throw error;
+  }
 
   if (state.user) {
     if (state.sync.dirty) {
@@ -1432,12 +1504,25 @@ const attachEvents = () => {
       setAuthStatus("请填写邮箱和密码");
       return;
     }
-    const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) {
+    try {
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        setAuthStatus(`注册失败：${error.message || "请检查配置"}`);
+        return;
+      }
+      setAuthStatus("注册成功，请查看邮箱确认");
+    } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const local = registerLocalUser(email, password);
+        if (!local.ok) {
+          setAuthStatus(`注册失败：${local.message}`);
+          return;
+        }
+        setAuthStatus("云端不可达，已完成本地注册（仅本机可用）");
+        return;
+      }
       setAuthStatus(`注册失败：${error.message || "请检查配置"}`);
-      return;
     }
-    setAuthStatus("注册成功，请查看邮箱确认");
   });
 
   dom.signIn.addEventListener("click", async () => {
@@ -1450,31 +1535,58 @@ const attachEvents = () => {
       setAuthStatus("请填写邮箱和密码");
       return;
     }
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setAuthStatus(`登录失败：${error.message || "请检查配置"}`);
+        return;
+      }
+      state.user = data.user;
+      setAuthStatus(`已登录：${data.user.email}`);
+      if (state.sync.dirty) {
+        await syncAllGroupsToCloud("已同步本地到云端");
+      }
+      await loadGroupsFromCloud();
+      await loadCardsFromCloud();
+    } catch (error) {
+      if (isNetworkFetchError(error)) {
+        const local = loginLocalUser(email, password);
+        if (!local.ok) {
+          setAuthStatus(`登录失败：${local.message}`);
+          return;
+        }
+        setAuthStatus(`云端不可达，已本地登录：${email}`);
+        return;
+      }
       setAuthStatus(`登录失败：${error.message || "请检查配置"}`);
-      return;
     }
-    state.user = data.user;
-    setAuthStatus(`已登录：${data.user.email}`);
-    if (state.sync.dirty) {
-      await syncAllGroupsToCloud("已同步本地到云端");
-    }
-    await loadGroupsFromCloud();
-    await loadCardsFromCloud();
   });
 
   dom.signOut.addEventListener("click", async () => {
+    if (isLocalUser()) {
+      state.user = null;
+      setAuthStatus("未登录");
+      return;
+    }
     if (!supabaseClient) {
       setAuthStatus("Supabase 未初始化，请检查网络或刷新页面");
       return;
     }
-    await supabaseClient.auth.signOut();
-    state.user = null;
-    setAuthStatus("未登录");
+    try {
+      await supabaseClient.auth.signOut();
+      state.user = null;
+      setAuthStatus("未登录");
+    } catch (error) {
+      if (isNetworkFetchError(error)) {
+        state.user = null;
+        setAuthStatus("未登录（云端当前不可达）");
+        return;
+      }
+      setAuthStatus(`退出失败：${error.message || "请稍后重试"}`);
+    }
   });
 
   dom.signInGithub.addEventListener("click", async () => {
