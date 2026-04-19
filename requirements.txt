@@ -8,3 +8,10 @@ pyinstaller
 python-vlc
 sounddevice
 scipy
+librosa
+flask
+flask-cors
+pysrt
+eng-to-ipa
+allosaurus
+resampy

@@ -21,6 +21,7 @@ If you don't want to install all the dependencies and just want a standalone app
 - ⏱ Playback speed control (slow down or speed up)
 - 🎹 Keyboard shortcuts for fast navigation
 - 🎙 Record your voice while shadowing for self-assessment
+- 🎯 **Shadow Mode**: Automatic pronunciation assessment - play a sentence, record your voice, and get instant feedback on your pronunciation accuracy
 
 ---
 
@@ -121,6 +122,10 @@ python gui.py
 ### Step 3: Start Shadowing!
 
 - Select a video from the list
+- **Enable Shadow Mode** (press `H` or click the "🎯 Shadow" button) for automatic pronunciation assessment
+  - In Shadow Mode, the video will automatically pause after each sentence
+  - Record your voice when prompted
+  - Get instant pronunciation score feedback (0-100%)
 - Use shortcut keys to control playback and shadow efficiently:
   - `←/→`: Seek 5 seconds
   - `Space`: Play / Pause
@@ -128,6 +133,7 @@ python gui.py
   - `S`: Repeat subtitle
   - `D`: Next subtitle
   - `L`: Toggle subtitle looping
+  - `H`: Toggle Shadow Mode (pronunciation assessment)
 
 ---
 

@@ -96,54 +96,57 @@ def split_subtitles(word_dict, max_words=15):
 
     Logic:
       - Always split at strong punctuation (. ? !)
-      - Optionally split at soft punctuation (, ; :) if sentence is long enough
-      - Never split by word count alone (no punctuation → no split)
+      - Prefer to split at soft punctuation (, ; :) when sentences are long
+      - If no punctuation appears for a long time, force a split by word count
     """
     subtitles = []
-    current_sentence = ""
+    current_sentence = []
     sentence_start = None
-    last_end = None
+
+    def flush_chunk(chunk):
+        if not chunk:
+            return
+        start = chunk[0][1]
+        end = chunk[-1][2]
+        text = " ".join(word for word, _, _ in chunk).strip()
+        if text:
+            subtitles.append({"start": start, "end": end, "text": text})
+
+    strong_punct = re.compile(r"[.?!]$")
+    soft_punct = re.compile(r"[,;:]$")
 
     for (start, end), word in sorted(word_dict.items()):
         if sentence_start is None:
             sentence_start = start
-        current_sentence += " " + word
-        last_end = end
+        current_sentence.append((word, start, end))
 
-        # === punctuation rules ===
-        strong_punct = r"[.?!]$"
-        soft_punct = r"[,;:]$"
-        words_count = len(current_sentence.split())
-        end_sentence = False
-
-        # Strong punctuation → always end
-        if re.search(strong_punct, word) and words_count >= 3:
-            end_sentence = True
-        # Soft punctuation → end only if sentence already long enough
-        elif re.search(soft_punct, word) and words_count >= max_words:
-            end_sentence = True
-
-        if end_sentence:
-            subtitles.append(
-                {
-                    "start": sentence_start,
-                    "end": last_end,
-                    "text": current_sentence.strip(),
-                }
-            )
-            current_sentence = ""
+        # Always end at strong punctuation
+        if strong_punct.search(word) and len(current_sentence) >= 2:
+            flush_chunk(current_sentence)
+            current_sentence = []
             sentence_start = None
+            continue
+
+        # If the current sentence is already long, try to split at the last soft punctuation
+        if len(current_sentence) >= max_words:
+            split_pos = None
+            for idx, (w, _, _) in enumerate(current_sentence[:-1], 1):
+                if soft_punct.search(w):
+                    split_pos = idx
+            if split_pos is not None:
+                flush_chunk(current_sentence[:split_pos])
+                remaining = current_sentence[split_pos:]
+                current_sentence = remaining
+                sentence_start = current_sentence[0][1] if current_sentence else None
+            elif len(current_sentence) >= max_words * 2:
+                # Force split when a sentence is too long without punctuation
+                flush_chunk(current_sentence[:max_words])
+                remaining = current_sentence[max_words:]
+                current_sentence = remaining
+                sentence_start = current_sentence[0][1] if current_sentence else None
 
     # Add final leftover
-    if current_sentence:
-        subtitles.append(
-            {
-                "start": sentence_start,
-                "end": last_end,
-                "text": current_sentence.strip(),
-            }
-        )
-
+    flush_chunk(current_sentence)
     return subtitles
 
 
@@ -205,7 +208,7 @@ def run_transcription(youtube_url, model_size, output_folder, log_callback=print
         sys.stderr = sys.__stderr__
     try:
         log(f"🧠 Loading Whisper model ({model_size})...")
-        model = whisper.load_model(model_size)
+        model = whisper.load_model(model_size, device='cuda')
     except Exception as e:
         log("❌ Failed to load Whisper model:")
         log(str(e))
@@ -216,7 +219,17 @@ def run_transcription(youtube_url, model_size, output_folder, log_callback=print
     original_stdout = sys.stdout
     sys.stdout = StreamLogger(log_callback, total_duration)
     try:
-        result = model.transcribe(audio_file, word_timestamps=True, verbose=True)
+        # Use optimized parameters for better accuracy
+        result = model.transcribe(
+            audio_file, 
+            word_timestamps=True, 
+            verbose=True,
+            temperature=0.0,  # More deterministic
+            condition_on_previous_text=True,
+            compression_ratio_threshold=2.4,
+            logprob_threshold=-1.0,
+            no_speech_threshold=0.6
+        )
     finally:
         sys.stdout = original_stdout
 
